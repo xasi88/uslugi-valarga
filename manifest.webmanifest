@@ -1,0 +1,17 @@
+{
+  "id": "/",
+  "name": "Услуги Валарга",
+  "short_name": "Валарг",
+  "description": "Работы мастеров Валарга с ценами и заявки жителей.",
+  "lang": "ru",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0e7a5c",
+  "theme_color": "#0e7a5c",
+  "icons": [
+    { "src": "/img/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/img/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/img/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

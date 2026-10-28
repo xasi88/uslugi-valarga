@@ -1,0 +1,154 @@
+/* Брендбук «Услуги Валарга» в коде, четвёртая версия «Наклейки», палитра «Изумруд и лимон».
+   Личный стиль автора: фон в точку, наклейки с чёрным контуром и жёсткой тенью.
+   Описание и правила: docs/Брендбук Услуги Валарга.md.
+   Классы панели админа начинаются с a-. Здесь только общие части. */
+:root {
+  /* Палитра «Изумруд и лимон». Фон изумрудный, наклейки на бумаге, контур чёрный */
+  --emerald: #0e7a5c;
+  --emerald-deep: #0a5c45;
+  --lemon: #f6e04b;
+  --lemon-soft: #fbf0a6;
+  --coral: #ff6b4e;
+  --coral-soft: #ffcfc3;
+  --mint: #b4ecd6;
+  --mint-soft: #dcf6eb;
+  --paper: #fff9ef;
+  --paper-2: #f3ead8;
+  --white: #ffffff;
+  --ink: #0b0d17;
+  --ink-2: #3d4a45;
+  --ink-3: #6b7671;
+  --danger: #c8331f;
+
+  /* Тона места под фото: пока фото нет или оно грузится. Свой у вида работ */
+  --tone-1: #b4ecd6;
+  --tone-2: #fbeea0;
+  --tone-3: #ffcbbd;
+  --tone-4: #f1e4cc;
+  --tone-5: #8fd8bc;
+
+  /* Шрифты автора: Unbounded для слова «Валарг» и цен, Manrope для всего остального */
+  --font-display: "Unbounded", "Arial Black", sans-serif;
+  --font: "Manrope", "Segoe UI", Roboto, Arial, sans-serif;
+  --fs-cap: 13px;
+  --fs-small: 14px;
+  --fs-body: 16px;
+  --fs-lead: 17px;
+  --fs-h2: 22px;
+  --fs-h1: clamp(30px, 7.6vw, 48px);
+
+  /* Контур и тень наклейки */
+  --edge: 3px solid var(--ink);
+  --edge-thin: 2.5px solid var(--ink);
+  --drop: 5px 5px 0 var(--ink);
+  --drop-sm: 3px 3px 0 var(--ink);
+  --drop-lg: 8px 9px 0 var(--ink);
+
+  --r-card: 22px;
+  --r: 16px;
+  --r-sm: 12px;
+  --r-pill: 99px;
+  --tap: 52px;
+  --page: 1080px;
+  --page-text: 640px;
+
+  /* Движение: вес и пружина, нажатие вдавливает наклейку в тень */
+  --ease: cubic-bezier(.16, 1, .3, 1);
+  --spring: cubic-bezier(.34, 1.56, .64, 1);
+  --t-press: .08s;
+  --t-fast: .15s;
+  --t: .25s;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--emerald) radial-gradient(rgba(255, 255, 255, .11) 1.6px, transparent 1.6px) 0 0 / 22px 22px;
+  color: var(--paper);
+  font: 600 var(--fs-body)/1.45 var(--font);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+h1, h2, h3, p { margin: 0; }
+h1 { font-size: var(--fs-h1); line-height: 1.08; letter-spacing: -.02em; font-weight: 800; }
+h1 em { font-style: normal; color: var(--lemon); }
+h2 { font-size: var(--fs-h2); line-height: 1.2; letter-spacing: -.015em; font-weight: 800; }
+h3 { font-size: var(--fs-lead); line-height: 1.3; font-weight: 800; }
+button { font: inherit; color: inherit; }
+.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Наклейка: бумага, чёрный контур, жёсткая тень */
+.sticker { background: var(--paper); color: var(--ink); border: var(--edge); border-radius: var(--r-card); box-shadow: var(--drop); }
+
+/* Кнопки-пилюли с контуром. Главная лимонная, вторая бумажная, третья мятная.
+   При нажатии кнопка вдавливается в тень */
+.btn {
+  min-height: var(--tap);
+  padding: 0 22px;
+  border: var(--edge); border-radius: var(--r-pill);
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  box-shadow: var(--drop-sm);
+  font-weight: 800; font-size: 16px; line-height: 1;
+  text-decoration: none; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--t-press), box-shadow var(--t-press), background-color var(--t-fast);
+}
+.btn:active, .chip:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
+.btn:focus-visible, .chip:focus-visible, .tile:focus-visible, .tab a:focus-visible, .round:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.btn-ink { background: var(--lemon); color: var(--ink); }
+.btn-line { background: var(--paper); color: var(--ink); }
+.btn-fill { background: var(--mint); color: var(--ink); }
+.btn-danger { background: var(--paper); color: var(--danger); }
+@media (hover: hover) {
+  .btn-ink:hover { background: #fae86a; }
+  .btn-line:hover, .btn-danger:hover { background: var(--white); }
+  .btn-fill:hover { background: #c4f1df; }
+}
+.btn-wide { width: 100%; }
+.btn.sq { width: var(--tap); padding: 0; }
+.btn .wa { width: 20px; height: 20px; fill: currentColor; }
+
+/* Фильтр видов работ: пилюли с контуром. Выбранная лимонная */
+.chip {
+  flex: none; min-height: 44px; padding: 0 16px;
+  border: var(--edge); border-radius: var(--r-pill);
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--paper); color: var(--ink); box-shadow: var(--drop-sm);
+  font-size: 15px; font-weight: 800; white-space: nowrap;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: transform var(--t-press), box-shadow var(--t-press), background-color var(--t-fast);
+}
+.chip svg { width: 18px; height: 18px; }
+.chip .n { padding: 1px 7px; border-radius: var(--r-pill); background: var(--ink); color: var(--paper); font-size: 12px; }
+.chip[aria-pressed="true"] { background: var(--lemon); }
+
+/* Место под фото: тон вида работ в точку и значок, пока фото нет */
+.ph { position: relative; overflow: hidden; background: var(--tone, var(--tone-1)); }
+.ph::before { content: ""; position: absolute; inset: 0; background: radial-gradient(rgba(11, 13, 23, .09) 1.4px, transparent 1.4px) 0 0 / 14px 14px; }
+.ph > svg.i { position: absolute; left: 50%; top: 50%; width: 36px; height: 36px; margin: -18px 0 0 -18px; color: var(--ink); opacity: .5; stroke-width: 1.8; }
+.ph img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .4s var(--ease); }
+.ph img.ok { opacity: 1; }
+
+/* Знак «проверено админом»: мятная метка */
+.ver { display: inline-flex; align-items: center; gap: 6px; justify-self: start; padding: 4px 12px 4px 8px; border: var(--edge-thin); border-radius: var(--r-pill); background: var(--mint); color: var(--ink); font-size: var(--fs-cap); font-weight: 800; }
+.ver svg { width: 15px; height: 15px; color: var(--emerald-deep); stroke-width: 3; }
+
+/* Состояние объявления */
+.state { display: inline-flex; align-items: center; min-height: 28px; padding: 2px 11px; border: var(--edge-thin); border-radius: var(--r-pill); font-size: var(--fs-cap); font-weight: 800; color: var(--ink); }
+.state-wait { background: var(--lemon-soft); }
+.state-ok { background: var(--mint); }
+.state-no { background: var(--coral-soft); color: var(--danger); }
+.state-done { background: var(--paper-2); color: var(--ink-2); }
+
+/* Появление: наклейка прыгает с пружиной. Без JS всё видно */
+.js .fade-in:not(.in) { opacity: 0; }
+.js .fade-in.in { animation: pop .6s var(--spring) backwards; animation-delay: var(--d, 0s); }
+@keyframes pop { from { opacity: 0; translate: 0 22px; scale: .88; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+  .js .fade-in:not(.in) { opacity: 1; }
+}

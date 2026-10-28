@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0e7a5c">
+<title>Панель админа: Услуги Валарга</title>
+<link rel="icon" href="../img/icon.svg" type="image/svg+xml">
+<!-- Панель ставится отдельным значком, не путается с доской -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="../img/admin-180.png">
+<meta name="apple-mobile-web-app-title" content="Админ Валарг">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@800;900&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/site.css">
+<link rel="stylesheet" href="../css/forms.css">
+<link rel="stylesheet" href="../css/admin.css">
+</head>
+<body class="a-body">
+<header class="a-top">
+  <a class="brand" href="../">Валарг <span>услуги</span></a>
+  <span class="a-role">Админ</span>
+</header>
+<main class="a-main">
+  <h1 class="a-title">Панель админа</h1>
+  <div class="a-login" id="a-login"><p id="a-login-text">Проверяем вход.</p><button class="btn btn-ink" id="a-login-btn" hidden>Войти через Google</button></div>
+  <div class="a-tabs" id="a-tabs" role="tablist" hidden></div>
+  <ul class="a-list" id="a-list" hidden></ul>
+  <div class="install" id="install" hidden><p><b>Панель на экране</b><span id="install-text">Свой значок, отдельно от доски. Проверка объявлений открывается одним касанием.</span></p><button class="btn btn-ink" id="install-btn">Установить</button></div>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script type="module" src="../js/admin.js"></script>
+</body>
+</html>

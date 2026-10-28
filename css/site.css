@@ -1,0 +1,188 @@
+/* Доска «Наклейки»: шапка, заголовок, фильтр, сетка работ, заявки, страница мастера, меню.
+   Цвета, шрифты и движение только из css/base.css. */
+body { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+.wrap { max-width: var(--page); margin: 0 auto; padding: 0 16px; }
+
+/* Шапка: слово-наклейка слева, поиск и «Разместить» справа */
+.top {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  min-height: 68px; padding: 10px max(16px, calc((100% - var(--page)) / 2 + 16px));
+  background: var(--emerald);
+  transition: box-shadow var(--t);
+}
+.top.scrolled { box-shadow: 0 3px 0 var(--ink); }
+/* «Валарг» лимонной наклейкой: контур под буквой (paint-order), иначе он режет буквы */
+.brand {
+  display: flex; align-items: baseline; gap: 8px;
+  color: var(--lemon); text-decoration: none;
+  font: 900 25px/1 var(--font-display); letter-spacing: .01em;
+  -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill; text-shadow: 3px 3px 0 var(--ink);
+}
+.brand span { color: var(--paper); font: 800 15px var(--font); letter-spacing: 0; -webkit-text-stroke: 0; text-shadow: none; }
+.top-acts { display: flex; align-items: center; gap: 10px; }
+.round {
+  width: 46px; height: 46px; border: var(--edge); border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--paper); color: var(--ink); box-shadow: var(--drop-sm);
+  text-decoration: none; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: transform var(--t-press), box-shadow var(--t-press);
+}
+.round:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
+.round[href="#/razmestit"] { background: var(--lemon); }
+/* На телефоне «Разместить» есть в нижнем меню: в шапке только поиск */
+@media (max-width: 699px) { .top .round[href="#/razmestit"] { display: none; } }
+@media (max-width: 420px) {
+  .brand { font-size: 22px; -webkit-text-stroke-width: 4.5px; }
+  .top-acts { gap: 8px; }
+  .demo { padding: 3px 8px; font-size: 11px; }
+}
+.round svg { stroke-width: 2.6; }
+.demo { padding: 4px 10px; border: var(--edge-thin); border-radius: var(--r-pill); white-space: nowrap; background: var(--lemon-soft); color: var(--ink); font-size: 12px; font-weight: 800; }
+
+/* Заголовок доски и поиск */
+.page-head { padding-top: 8px; }
+.page-head h1 { max-width: 12em; }
+.page-head p { margin-top: 10px; max-width: 40ch; color: var(--mint); font-size: var(--fs-lead); }
+.search { position: relative; display: block; max-width: 560px; margin-top: 18px; }
+.search input {
+  width: 100%; min-height: 54px; padding: 0 16px 0 48px;
+  border: var(--edge); border-radius: 18px;
+  background: var(--paper); color: var(--ink); box-shadow: var(--drop-sm);
+  font: 600 var(--fs-body)/1 var(--font);
+}
+.search input::placeholder { color: var(--ink-3); }
+.search input:focus { outline: 3px solid var(--lemon); outline-offset: 2px; }
+.search svg { position: absolute; left: 16px; top: 17px; color: var(--ink); stroke-width: 2.6; }
+.chips-wrap { position: sticky; top: 68px; z-index: 10; background: var(--emerald); }
+.chips { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding: 16px max(16px, calc((100% - var(--page)) / 2 + 16px)) 14px; }
+.chips::-webkit-scrollbar { display: none; }
+
+/* Сетка работ: наклейки, первая крупно. Соседние чуть повёрнуты в разные стороны */
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 14px; padding: 10px 0 12px; }
+@media (min-width: 700px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 30px 22px; } }
+@media (min-width: 1000px) { .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.tile {
+  position: relative; display: grid; gap: 8px; align-content: start;
+  padding: 7px 7px 12px; border: var(--edge); border-radius: var(--r-card);
+  background: var(--paper); color: var(--ink); box-shadow: var(--drop);
+  text-decoration: none; -webkit-tap-highlight-color: transparent;
+  rotate: var(--tilt, 0deg);
+  transition: rotate var(--t) var(--spring), translate var(--t) var(--spring), box-shadow var(--t);
+}
+.tile:nth-child(odd) { --tilt: -1deg; }
+.tile:nth-child(even) { --tilt: .9deg; }
+.grid > .tile:first-child { grid-column: span 2; --tilt: -.5deg; }
+.tile:active { translate: 3px 3px; box-shadow: 2px 2px 0 var(--ink); }
+.tile .ph { aspect-ratio: 4 / 5; border: var(--edge-thin); border-radius: 15px; }
+.grid > .tile:first-child .ph { aspect-ratio: 16 / 11; }
+.tile .ph img { transition: opacity .4s var(--ease), transform .6s var(--ease); }
+@media (hover: hover) {
+  .tile:hover { rotate: 0deg; translate: -2px -3px; box-shadow: var(--drop-lg); }
+  .tile:hover .ph img { transform: scale(1.05); }
+}
+/* Ценник: коралловая наклейка в углу фото */
+.price { position: absolute; z-index: 1; left: 8px; bottom: 10px; max-width: calc(100% - 14px); padding: 5px 9px; border: var(--edge); border-radius: var(--r-sm); background: var(--coral); color: var(--ink); box-shadow: var(--drop-sm); rotate: -4deg; font: 800 13px/1.15 var(--font-display); white-space: normal; }
+.price small { margin-left: 1px; font: 800 11px var(--font); }
+.grid > .tile:first-child .price { font-size: 18px; padding: 7px 13px; }
+.grid > .tile:first-child .price small { font-size: 13px; }
+.count { position: absolute; z-index: 1; right: 8px; top: 8px; padding: 3px 9px; border-radius: var(--r-pill); background: var(--ink); color: var(--paper); font-size: 12px; font-weight: 800; }
+.tile-title { padding: 4px 4px 0; font-weight: 800; font-size: 15px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.grid > .tile:first-child .tile-title { font-size: 18px; }
+.tile-who { display: flex; align-items: center; gap: 6px; margin-top: -4px; padding: 0 4px; font-size: var(--fs-cap); font-weight: 700; color: var(--ink-2); }
+.tile-who svg { width: 15px; height: 15px; color: var(--emerald); stroke-width: 3; }
+.empty { grid-column: 1 / -1; display: grid; gap: 14px; justify-items: start; padding: 20px; border: var(--edge); border-radius: var(--r-card); background: var(--paper); color: var(--ink-2); box-shadow: var(--drop); font-weight: 700; }
+
+/* Заявки: наклейки ровно, без наклона: в них много текста */
+.reqs { list-style: none; display: grid; gap: 20px; max-width: var(--page-text); margin: 0 auto; padding: 10px 16px 8px; }
+.req { display: grid; gap: 10px; padding: 16px; border: var(--edge); border-radius: var(--r-card); background: var(--paper); color: var(--ink); box-shadow: var(--drop); }
+.req-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.req-kind { display: flex; align-items: center; gap: 6px; font-size: var(--fs-small); font-weight: 700; color: var(--ink-2); }
+.req-kind svg { width: 18px; height: 18px; }
+.req-budget { padding: 4px 10px; border: var(--edge-thin); border-radius: var(--r-sm); background: var(--coral); box-shadow: var(--drop-sm); rotate: 2deg; font: 800 15px/1.2 var(--font-display); }
+.req h3 { font-size: 18px; }
+.req-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: var(--fs-small); font-weight: 700; color: var(--ink-2); }
+.req-meta span { display: inline-flex; align-items: center; gap: 5px; }
+.req-meta svg { width: 16px; height: 16px; }
+.req-shots { display: flex; gap: 8px; }
+.req-shots .ph { width: 72px; height: 72px; border: var(--edge-thin); border-radius: var(--r-sm); }
+.req-acts { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-top: 4px; }
+
+/* Предложения цены: мятная полоса раскрывает список, дешёвое сверху */
+.offers-btn {
+  width: 100%; min-height: 48px; padding: 0 14px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  border: var(--edge-thin); border-radius: 14px; background: var(--mint-soft); color: var(--ink);
+  font-size: 15px; font-weight: 700; text-align: left; cursor: pointer;
+}
+.offers-btn b { font-weight: 800; }
+.offers-btn > svg { transition: transform var(--t) var(--spring); }
+.open .offers-btn > svg { transform: rotate(180deg); }
+.offers { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s var(--ease); }
+.offers > div { overflow: hidden; }
+.open .offers { grid-template-rows: 1fr; }
+.offers ul { list-style: none; margin: 0; padding: 4px 2px 0; }
+.offers li { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 2px dashed rgba(11, 13, 23, .16); }
+.offers li:last-child { border-bottom: 0; }
+.o-name { font-weight: 800; }
+.o-name em { margin-left: 8px; padding: 1px 8px; border: 2px solid var(--ink); border-radius: var(--r-pill); background: var(--lemon); font-style: normal; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.o-name small { display: block; margin-top: 2px; font-size: var(--fs-cap); font-weight: 600; color: var(--ink-3); }
+.o-price { font: 800 15px var(--font-display); }
+.offers .btn { min-height: 44px; width: 44px; }
+.offers-none { font-size: var(--fs-small); font-weight: 700; color: var(--ink-3); }
+
+/* Страница мастера: фото наклейкой, листаются пальцем, ниже карточка и кнопки */
+.master { max-width: var(--page-text); margin: 0 auto; }
+.gal { position: relative; margin: 8px 16px 0; border: var(--edge); border-radius: 24px; overflow: hidden; box-shadow: var(--drop); }
+.gal-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.gal-track::-webkit-scrollbar { display: none; }
+.gal-track .ph { flex: 0 0 100%; aspect-ratio: 4 / 5; max-height: 68vh; scroll-snap-align: start; }
+.gal .round { position: absolute; z-index: 2; top: 12px; left: 12px; }
+.gal .round svg { transform: rotate(180deg); }
+.gal .count { top: 14px; right: 12px; }
+.m-body { display: grid; gap: 10px; margin: 22px 16px 24px; padding: 18px; border: var(--edge); border-radius: var(--r-card); background: var(--paper); color: var(--ink); box-shadow: var(--drop); }
+.m-body h1 { font-size: clamp(24px, 6vw, 32px); }
+.m-who { color: var(--ink-2); font-size: var(--fs-lead); font-weight: 700; }
+.m-price { justify-self: start; margin-top: 6px; padding: 8px 16px; border: var(--edge); border-radius: var(--r); background: var(--coral); box-shadow: var(--drop-sm); rotate: -2deg; font: 800 26px/1.15 var(--font-display); letter-spacing: -.01em; }
+.m-price small { margin-left: 6px; font: 800 15px var(--font); }
+.m-note { font-size: var(--fs-lead); font-weight: 600; }
+.m-date { font-size: var(--fs-cap); font-weight: 600; color: var(--ink-3); }
+.m-bar {
+  position: fixed; z-index: 25; left: 0; right: 0; bottom: 0;
+  display: grid; grid-template-columns: 1fr auto; gap: 10px;
+  padding: 12px max(16px, calc((100% - var(--page-text)) / 2 + 16px)) calc(14px + env(safe-area-inset-bottom));
+  background: var(--paper); border-top: var(--edge);
+}
+body[data-view="master"] .tab { display: none; }
+
+/* «Установить»: лимонная наклейка над подвалом, видна, только если браузер умеет ставить приложение */
+.install { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px 16px; margin-top: 32px; padding: 16px; border: var(--edge); border-radius: var(--r-card); background: var(--lemon-soft); color: var(--ink); box-shadow: var(--drop); }
+.install b { display: block; font-size: 17px; font-weight: 800; }
+.install span { display: block; margin-top: 2px; color: var(--ink-2); font-size: var(--fs-small); }
+@media (max-width: 420px) { .install { grid-template-columns: 1fr; } }
+
+.foot { padding-top: 32px; padding-bottom: 20px; color: var(--mint); font-size: var(--fs-small); }
+
+/* Нижнее меню: бумага с контуром. Выбранный пункт на лимонной пилюле, «Разместить» лимонным кругом */
+.tab {
+  position: fixed; z-index: 30; left: 0; right: 0; bottom: 0;
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  padding: 6px max(0px, calc((100% - 560px) / 2)) calc(10px + env(safe-area-inset-bottom));
+  background: var(--paper); border-top: var(--edge);
+}
+.tab a { display: grid; justify-items: center; align-content: center; gap: 2px; min-height: 56px; color: var(--ink-2); font-size: 12px; font-weight: 800; text-decoration: none; -webkit-tap-highlight-color: transparent; transition: color var(--t-fast); }
+.tab a i { display: grid; place-items: center; width: 54px; height: 30px; border: 2.5px solid transparent; border-radius: var(--r-pill); transition: background-color var(--t-fast); }
+.tab a svg { width: 22px; height: 22px; stroke-width: 2.4; }
+.tab a.on { color: var(--ink); }
+.tab a.on i { background: var(--lemon); border-color: var(--ink); }
+.tab a[href="#/razmestit"] i { width: 54px; height: 54px; margin-top: -28px; border: var(--edge); border-radius: 50%; background: var(--lemon); color: var(--ink); box-shadow: var(--drop-sm); }
+
+.toast {
+  position: fixed; z-index: 60; left: 50%; bottom: calc(100px + env(safe-area-inset-bottom));
+  max-width: calc(100% - 32px); padding: 13px 18px; border: var(--edge); border-radius: var(--r);
+  background: var(--paper); color: var(--ink); box-shadow: var(--drop-sm);
+  font-size: 15px; font-weight: 800;
+  opacity: 0; transform: translate(-50%, 10px); pointer-events: none;
+  transition: opacity var(--t), transform var(--t) var(--spring);
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
