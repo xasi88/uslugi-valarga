@@ -146,7 +146,11 @@ export async function submit(form) {
       btn.textContent = `Загружаем фото ${i + 1} из ${list.length}`;
       photos.push(await upload(list[i]));
     }
-    await store.add(form.dataset.type, { ...data, photos });
+    btn.textContent = 'Отправляем';
+    await store.add(form.dataset.type, { ...data, photos }, () => {
+      btn.textContent = 'Отправляем. Не закрывайте страницу';
+      toast('Связь слабая. Объявление уйдёт, когда связь станет лучше.');
+    });
     keepContact(data.name, data.phone, data.wa);
     send({ 'Объявления': { 'Отправили': isReq ? 'Работа' : 'Услуга' } });
     location.hash = '#/gotovo';

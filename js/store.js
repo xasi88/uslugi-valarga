@@ -8,7 +8,7 @@ import {
   collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query, where, writeBatch, serverTimestamp,
 } from './fb.js';
 import { toast } from './ui.js';
-import { nextTime, isBot } from './util.js';
+import { nextTime, isBot, sent } from './util.js';
 
 // Поисковый робот видит витрину без объявлений: имена и номера жителей не попадают в поиск (решение автора 2026-10-30)
 export const robot = isBot(navigator.userAgent);
@@ -129,28 +129,27 @@ const why = e => (e?.code !== 'permission-denied'
   ? 'Нет связи с интернетом. Попробуйте ещё раз.'
   : guard ? 'Одно объявление в сутки. С этого номера сегодня уже отправляли. Попробуйте завтра.'
     : 'База не приняла запись. Проверьте поля и попробуйте ещё раз.');
-// Связь медленная: база сама отправит запись, когда связь появится. Экран не ждёт дольше 8 секунд
-const sent = p => Promise.race([p, new Promise(r => setTimeout(r, 8000))]);
 async function user() {
   await auth.authStateReady();
   return auth.currentUser || (await signInAnonymously(auth)).user;
 }
 
-// Новое объявление ждёт проверки админа
-export async function add(type, data) {
+// Новое объявление ждёт проверки админа. onSlow: связь слабая, форма говорит об этом и ждёт ответа базы
+export async function add(type, data, onSlow = () => {}) {
   checkLimit();
   let item;
   try {
     const u = await user();
     const ref = doc(collection(db, type));
     item = { ...data, at: Date.now(), status: 'wait', owner: u.uid };
-    // В той же записи отметка времени для телефона и для номера: по ним база считает сутки
+    // В той же записи отметка времени для телефона и для номера: по ним база считает сутки.
+    // t и id: где лежит объявление. Без объявления на этот номер база не ставит отметку номера
     const b = writeBatch(db);
-    const stamp = { at: serverTimestamp() };
+    const stamp = { at: serverTimestamp(), t: type, id: ref.id };
     b.set(doc(db, 'limits', 'u_' + u.uid), stamp);
     b.set(doc(db, 'limits', 'p_' + data.phone), stamp);
     b.set(ref, item);
-    await sent(b.commit());
+    await sent(b.commit(), onSlow);
     item.id = ref.id;
   } catch (e) { throw new Error(why(e)); }
   try { localStorage.setItem('uv-last', String(item.at)); } catch { /* не страшно */ }

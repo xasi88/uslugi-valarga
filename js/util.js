@@ -77,3 +77,10 @@ export const wa = (d, text) => `https://wa.me/${d}?text=${encodeURIComponent(tex
 
 // Обрезать пробелы и длину: поле не может быть бесконечным
 export const clean = (s, max) => String(s ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
+
+// Ждать ответа базы до конца. Ответа нет дольше ms: onSlow говорит человеку о слабой связи.
+// «Отправлено» только после ответа: без него запись живёт в памяти страницы и пропадёт, если её закрыть
+export async function sent(p, onSlow, ms = 8000) {
+  const t = setTimeout(onSlow, ms);
+  try { return await p; } finally { clearTimeout(t); }
+}
