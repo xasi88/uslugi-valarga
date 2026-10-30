@@ -1,7 +1,7 @@
 // Доска «Услуги Валарга»: переходы между экранами, меню, поиск, касания.
 // Экраны: услуги и работа (board.js), «Разместить» (post.js), «Мои» (mine.js).
 // Внутри кода «Работа» зовётся requests: так называется собрание в базе.
-import { icon } from './icons.js';
+import { icon, waIcon } from './icons.js';
 import { $, toast } from './ui.js';
 import * as board from './board.js';
 import * as post from './post.js';
@@ -120,6 +120,11 @@ document.addEventListener('submit', e => {
 
 addEventListener('scroll', () => $('#top').classList.toggle('scrolled', scrollY > 8), { passive: true });
 addEventListener('hashchange', route);
+
+// Подвал: «Написать админу» с готовой первой фразой
+const toAdmin = $('#to-admin');
+toAdmin.href = post.toAdmin();
+toAdmin.insertAdjacentHTML('afterbegin', waIcon);
 
 renderTab();
 route();

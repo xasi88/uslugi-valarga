@@ -1,22 +1,28 @@
 // Экраны «Разместить» (услуга или работа) и «Отправлено».
-import { icon, KINDS } from './icons.js';
-import { esc, phone, phoneNice, price, clean } from './util.js';
+import { icon, waIcon, KINDS } from './icons.js';
+import { esc, phone, phoneNice, price, clean, wa } from './util.js';
+import { ADMIN_PHONE } from './config.js';
 import { $, reduce, toast, watch, photo } from './ui.js';
 import { shotsField, upload } from './photos.js';
 import * as store from './store.js';
 
 const back = href => `<a class="back" href="${href}" aria-label="Назад">${icon('arrow')}</a>`;
 
+// Связь с админом: WhatsApp автора с готовой первой фразой
+export const toAdmin = () => wa(ADMIN_PHONE, 'Здравствуйте! Пишу с доски «Услуги Валарга».');
+const adminLine = text => `<a class="to-admin" href="${toAdmin()}" target="_blank" rel="noopener">${waIcon}${text}</a>`;
+
 // Имя и номер запоминаются на телефоне: второй раз вводить не нужно
 function contact() {
   try { return JSON.parse(localStorage.getItem('uv-contact')) || {}; } catch { return {}; }
 }
-function keepContact(name, ph) {
-  try { localStorage.setItem('uv-contact', JSON.stringify({ name, phone: ph })); } catch { /* не страшно */ }
+function keepContact(name, ph, hasWa) {
+  try { localStorage.setItem('uv-contact', JSON.stringify({ name, phone: ph, wa: hasWa })); } catch { /* не страшно */ }
 }
 
-const opts = (name, list, withIcons) => `<div class="pick" data-name="${name}">${list.map(([v, t]) =>
-  `<button type="button" class="chip opt" data-v="${v}" aria-pressed="false">${withIcons ? icon(v) : ''}${t}</button>`).join('')}</div>
+// Виды работ: ровная сетка одинаковых плиток, значок над названием. Остальной выбор: пилюли в строку
+const opts = (name, list, withIcons) => `<div class="pick${withIcons ? ' pick-kinds' : ''}" data-name="${name}">${list.map(([v, t]) =>
+  `<button type="button" class="chip opt" data-v="${v}" aria-pressed="false">${withIcons ? icon(v) : ''}<span>${t}</span></button>`).join('')}</div>
   <input type="hidden" name="${name}">`;
 const kinds = () => opts('kind', KINDS.map(k => [k.id, k.name]), true);
 const field = (label, input, hint = '') => `<label class="field"><span class="lbl">${label}</span>${input}${hint ? `<small>${hint}</small>` : ''}<em class="err"></em></label>`;
@@ -25,8 +31,11 @@ const moneyInput = (name, ph) => `<span class="money"><input name="${name}" inpu
 function who() {
   const c = contact();
   return field('Ваше имя', `<input name="name" maxlength="30" autocomplete="given-name" value="${esc(c.name || '')}">`) +
-    field('Номер WhatsApp', `<input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 928 123-45-67" value="${esc(phoneNice(c.phone || ''))}">`, 'Номер увидят на доске, чтобы вам написать.');
+    field('Номер телефона', `<input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 928 123-45-67" value="${esc(phoneNice(c.phone || ''))}">`, 'Номер увидят на доске, чтобы вам позвонить или написать.') +
+    group('На этом номере есть WhatsApp?', yesNo('wa', c.wa !== false));
 }
+// Да или нет в рамке, как «От» и «Точно» у цены
+const yesNo = (name, yes) => `<div class="seg" data-name="${name}"><button type="button" class="chip opt" data-v="1" aria-pressed="${yes}">Да</button><button type="button" class="chip opt" data-v="0" aria-pressed="${!yes}">Нет</button></div><input type="hidden" name="${name}" value="${yes ? 1 : 0}">`;
 
 export function choiceScreen() {
   // Слева тон с крупным значком: камера для фото работ или портфель для работы
@@ -37,8 +46,9 @@ export function choiceScreen() {
   return `<div class="scr">
     <h1>Разместить</h1>
     <p class="scr-lead">Бесплатно. Админ группы «Валарг» проверит объявление и выложит его на доску.</p>
-    ${row('#/razmestit/usluga', 'camera', 2, 'Предлагаю услугу', 'Покажите фото работ и цену. Вам напишут в WhatsApp.')}
-    ${row('#/razmestit/rabota', 'job', 3, 'Предлагаю работу', 'Опишите работу и оплату. Вам напишут в WhatsApp.')}
+    ${row('#/razmestit/usluga', 'camera', 2, 'Предлагаю услугу', 'Покажите фото работ и цену. Вам позвонят или напишут.')}
+    ${row('#/razmestit/rabota', 'job', 3, 'Предлагаю работу', 'Опишите работу и оплату. Вам позвонят или напишут.')}
+    ${adminLine('Вопрос по доске? Написать админу')}
   </div>`;
 }
 
@@ -80,6 +90,7 @@ export function doneScreen() {
     <p class="scr-lead">Админ группы «Валарг» проверит объявление и выложит его на доску. Что с ним, видно во вкладке «Мои».</p>
     <a class="btn btn-ink btn-wide" href="#/moi">Мои объявления</a>
     <a class="btn btn-line btn-wide" href="#/">На доску</a>
+    ${adminLine('Вопрос? Написать админу')}
   </div>`;
 }
 
@@ -103,7 +114,7 @@ function bad(form, name, text) {
 function read(form, need) {
   form.querySelectorAll('.bad').forEach(f => f.classList.remove('bad'));
   const v = n => form.elements[n]?.value ?? '';
-  const out = { name: clean(v('name'), 30), phone: phone(v('phone')) };
+  const out = { name: clean(v('name'), 30), phone: phone(v('phone')), wa: v('wa') !== '0' };
   const errs = [];
   for (const [n, test, text] of need) {
     out[n] = test(v(n));
@@ -135,7 +146,7 @@ export async function submit(form) {
       photos.push(await upload(list[i]));
     }
     await store.add(form.dataset.type, { ...data, photos });
-    keepContact(data.name, data.phone);
+    keepContact(data.name, data.phone, data.wa);
     location.hash = '#/gotovo';
   } catch (e) {
     toast(e.message);

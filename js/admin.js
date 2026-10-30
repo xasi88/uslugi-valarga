@@ -1,6 +1,6 @@
 // Панель админа: проверка новых объявлений и снятие с доски.
 // Классы панели начинаются с a-. Данные через store.js, как у доски.
-import { icon, waIcon, kindById } from './icons.js';
+import { icon, waIcon, phoneIcon, kindById } from './icons.js';
 import { esc, ago, wa, phoneNice, photoUrl, priceText as cost, payText } from './util.js';
 import { CLOUDINARY } from './config.js';
 import { $, toast } from './ui.js';
@@ -32,12 +32,24 @@ function card(x) {
     <h3>${esc(isReq ? x.text : x.title)}</h3>
     ${x.photos?.length ? `<div class="a-shots">${x.photos.map(p => `<img src="${esc(photoUrl(p, 200, CLOUDINARY.cloud))}" alt="">`).join('')}</div>` : ''}
     <p class="a-facts">${facts}</p>
-    <p class="a-who">${esc(x.name)} · <a href="${wa(x.phone, 'Здравствуйте! Пишу как админ доски «Услуги Валарга».')}" target="_blank" rel="noopener">${waIcon}${phoneNice(x.phone)}</a></p>
+    <p class="a-who">${esc(x.name)} · ${x.wa === false
+      ? `<a href="tel:+${x.phone}">${phoneIcon}${phoneNice(x.phone)}</a> · без WhatsApp`
+      : `<a href="${wa(x.phone, 'Здравствуйте! Пишу как админ доски «Услуги Валарга».')}" target="_blank" rel="noopener">${waIcon}${phoneNice(x.phone)}</a>`}</p>
     <div class="a-acts">${acts}</div>
   </li>`;
 }
 
+// Защита от спама: одно объявление в сутки. Админ включает и выключает её здесь
+function guardBox() {
+  const on = store.guardOn();
+  $('#a-guard').innerHTML = `<p><b>Защита от спама</b><span>${on
+    ? 'Одно объявление в сутки с одного телефона и одного номера.'
+    : 'Выключена: люди отправляют объявления без ограничений.'}</span></p>
+    <div><button class="chip" data-guard="1" aria-pressed="${on}">Включена</button><button class="chip" data-guard="0" aria-pressed="${!on}">Выключена</button></div>`;
+}
+
 function render() {
+  guardBox();
   const lists = { wait: items('wait'), ok: items('ok') };
   const names = { wait: 'Проверка', ok: 'На доске' };
   $('#a-tabs').innerHTML = Object.keys(names).map(k =>
@@ -50,6 +62,12 @@ function render() {
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-tab]');
   if (t) { tab = t.dataset.tab; render(); return; }
+  const g = e.target.closest('[data-guard]');
+  if (g) {
+    const on = g.dataset.guard === '1';
+    if (on !== store.guardOn()) { store.setGuard(on); toast(on ? 'Защита от спама включена.' : 'Защита от спама выключена.'); }
+    return;
+  }
   const a = e.target.closest('[data-a]');
   if (!a) return;
   const c = a.closest('.a-card');
@@ -72,7 +90,7 @@ const GATE = {
 function gate() {
   const s = store.adminState();
   $('#a-login').hidden = s === 'in';
-  $('#a-tabs').hidden = $('#a-list').hidden = s !== 'in';
+  $('#a-guard').hidden = $('#a-tabs').hidden = $('#a-list').hidden = s !== 'in';
   $('#a-login-text').textContent = GATE[s] || '';
   $('#a-login-btn').hidden = s === 'checking';
   if (s === 'in') render();

@@ -20,6 +20,14 @@ function tile(m, i) {
   </a>`;
 }
 
+// Связь: WhatsApp и звонок двумя равными кнопками. На номере нет WhatsApp: одна кнопка звонка.
+// У старых объявлений поля wa нет: их номера вводили как номера WhatsApp
+function reach(x, hello) {
+  const call = cls => `<a class="btn ${cls}" href="tel:+${x.phone}">${phoneIcon}Позвонить</a>`;
+  if (x.wa === false) return call('btn-ink');
+  return `<a class="btn btn-ink" href="${wa(x.phone, hello)}" target="_blank" rel="noopener">${waIcon}WhatsApp</a>${call('btn-line')}`;
+}
+
 function reqRow(r, i) {
   const k = kindById(r.kind);
   const hello = `Здравствуйте! Видел вашу работу на доске «Услуги Валарга»: ${r.text}.`;
@@ -29,10 +37,7 @@ function reqRow(r, i) {
     <h3>${esc(r.text)}</h3>
     ${r.when || r.place ? `<p class="req-meta">${r.when ? `<span>${icon('clock')}${esc(r.when)}</span>` : ''}${r.place ? `<span>${icon('pin')}${esc(r.place)}</span>` : ''}</p>` : ''}
     ${shots}
-    <div class="req-acts">
-      <a class="btn btn-ink" href="${wa(r.phone, hello)}" target="_blank" rel="noopener">${waIcon}Написать в WhatsApp</a>
-      <a class="btn btn-line sq" href="tel:+${r.phone}" aria-label="Позвонить: ${esc(r.name)}">${phoneIcon}</a>
-    </div>
+    <div class="req-acts">${reach(r, hello)}</div>
   </li>`;
 }
 
@@ -51,9 +56,11 @@ export function renderKinds() {
     const n = count(id);
     return `<button class="chip" data-kind="${id}" aria-pressed="${state.kind === id}">${ic ? icon(id) : ''}${name}${n ? `<span class="n">${n}</span>` : ''}</button>`;
   };
-  // Виды, где есть объявления, первыми
-  const sorted = [...KINDS].sort((a, b) => (count(b.id) > 0) - (count(a.id) > 0));
-  $('#kinds').innerHTML = chip('all', 'Все', false) + sorted.map(k => chip(k.id, k.name, true)).join('');
+  // Только виды, где есть объявления, в постоянном порядке. Выбранный остаётся, даже если опустел.
+  // Объявлений нет совсем: ряда нет
+  const used = KINDS.filter(k => count(k.id) > 0 || state.kind === k.id);
+  $('#kinds').parentElement.hidden = !used.length;
+  $('#kinds').innerHTML = chip('all', 'Все', false) + used.map(k => chip(k.id, k.name, true)).join('');
 }
 
 export function renderList() {
@@ -94,10 +101,7 @@ export function masterPage(id) {
       ${m.note ? `<p class="m-note">${esc(m.note)}</p>` : ''}
       <p class="m-date">Размещено ${ago(m.at)}</p>
     </div>
-    <div class="m-bar">
-      <a class="btn btn-ink" href="${wa(m.phone, hello)}" target="_blank" rel="noopener">${waIcon}Написать в WhatsApp</a>
-      <a class="btn btn-line sq" href="tel:+${m.phone}" aria-label="Позвонить: ${esc(m.name)}">${phoneIcon}</a>
-    </div>
+    <div class="m-bar">${reach(m, hello)}</div>
   </article>`;
 }
 

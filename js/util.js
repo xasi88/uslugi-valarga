@@ -22,6 +22,13 @@ export function ago(t, now = Date.now()) {
   return d === 1 ? 'вчера' : `${d} ${plural(d, 'день', 'дня', 'дней')} назад`;
 }
 
+// Когда можно снова, если до этого времени меньше суток: «сегодня после 18:40», «завтра после 9:05»
+export function nextTime(t, now = Date.now()) {
+  const d = new Date(t);
+  const day = d.toDateString() === new Date(now).toDateString() ? 'сегодня' : 'завтра';
+  return `${day} после ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
 // Телефон России в вид 7XXXXXXXXXX. «8 928...», «+7 (928)...», «928...» дают одно и то же.
 // Неверный номер: пустая строка.
 export function phone(raw) {

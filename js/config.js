@@ -2,6 +2,9 @@
 // Cloudinary: облако автора, настройка загрузки «valarg» без подписи (только фото, до 1600 точек, папка valarg).
 export const CLOUDINARY = { cloud: 'bxtjrkti', preset: 'valarg' };
 
+// Связь с админом доски: WhatsApp автора. Номер на сайте по просьбе автора (2026-10-30)
+export const ADMIN_PHONE = '79659696053';
+
 // Firebase: проект uslugi-valarga, база Firestore во Франкфурте (europe-west3),
 // вход Google автора и вход без аккаунта. Данные закрывают правила базы (firestore.rules).
 // Взяты из консоли Firebase 2026-10-28: «Настройки проекта», «Ваши приложения», uslugi-valarga-site.

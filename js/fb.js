@@ -5,7 +5,7 @@ import {
   getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, onAuthStateChanged, signOut,
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import {
-  getFirestore, collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query, where,
+  getFirestore, collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query, where, writeBatch, serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { FIREBASE } from './config.js';
 
@@ -22,5 +22,5 @@ export const adminDb = isPanel ? db : getFirestore(adminApp);
 
 export {
   GoogleAuthProvider, signInWithPopup, signInAnonymously, onAuthStateChanged, signOut,
-  collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query, where,
+  collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query, where, writeBatch, serverTimestamp,
 };

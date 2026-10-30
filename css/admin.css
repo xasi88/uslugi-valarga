@@ -18,6 +18,11 @@
 .a-back:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 .a-main { max-width: 760px; margin: 0 auto; padding: 24px 16px 60px; display: grid; gap: 18px; }
 .a-login { display: grid; gap: 12px; justify-items: start; padding: 16px; border: var(--edge); border-radius: 18px; background: var(--lemon-soft); color: var(--ink); box-shadow: var(--drop-sm); font-size: 15px; }
+/* Защита от спама: бумажная наклейка, выбранное положение лимонное */
+.a-guard { display: grid; gap: 12px; padding: 16px; border: var(--edge); border-radius: 18px; background: var(--paper); color: var(--ink); box-shadow: var(--drop-sm); font-size: 15px; }
+.a-guard b { display: block; font-size: 17px; font-weight: 800; }
+.a-guard span { display: block; margin-top: 2px; color: var(--ink-2); }
+.a-guard div { display: flex; flex-wrap: wrap; gap: 10px; }
 .a-tabs { display: flex; flex-wrap: wrap; gap: 10px; }
 .a-tabs .chip b { min-width: 24px; padding: 1px 7px; border-radius: var(--r-pill); background: var(--ink); color: var(--paper); font-size: 12px; text-align: center; }
 .a-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }

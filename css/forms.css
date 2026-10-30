@@ -49,6 +49,11 @@
 .bad .pick .chip { border-color: var(--danger); }
 .form > .btn-wide { margin-top: 16px; }
 .pick { display: flex; flex-wrap: wrap; gap: 10px; }
+/* Виды работ: ровная сетка, 3 плитки в ряд на телефоне, 5 на широком экране. Плитки одной высоты */
+.pick-kinds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (min-width: 560px) { .pick-kinds { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+.pick-kinds .chip { flex-direction: column; justify-content: center; gap: 6px; min-height: 84px; padding: 8px 4px; border-radius: var(--r); white-space: normal; text-align: center; font-size: 14px; line-height: 1.2; }
+.pick-kinds .chip svg { width: 24px; height: 24px; }
 .seg { display: inline-grid; grid-template-columns: 1fr 1fr; gap: 4px; justify-self: start; padding: 4px; border: var(--edge); border-radius: var(--r-pill); background: var(--paper-2); }
 .seg .chip { min-width: 96px; justify-content: center; border: 2.5px solid transparent; background: transparent; box-shadow: none; }
 .seg .chip:active { transform: none; }

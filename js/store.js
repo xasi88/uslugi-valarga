@@ -5,11 +5,12 @@
 // находит свои объявления. Автор входит в панели через Google. Права проверяют правила базы.
 import {
   auth, db, adminAuth, adminDb, isPanel, GoogleAuthProvider, signInWithPopup, signInAnonymously, onAuthStateChanged, signOut,
-  collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query, where,
+  collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query, where, writeBatch, serverTimestamp,
 } from './fb.js';
 import { toast } from './ui.js';
+import { nextTime } from './util.js';
 
-const WAIT_MAX = 3;
+const DAY = 864e5;
 const TYPES = ['masters', 'requests'];
 
 // Каждая подписка кладёт свои документы отдельно, экраны видят их вместе
@@ -35,6 +36,12 @@ function merged(type) {
   return [...out.values()];
 }
 const list = type => merged(type).sort((a, b) => b.at - a.at);
+
+// Защита от спама: одно объявление в сутки с телефона и с номера (решение автора 2026-10-30).
+// Админ включает и выключает её в панели. Настройки в базе ещё нет: защита включена
+let guard = true;
+export const guardOn = () => guard;
+onSnapshot(doc(db, 'settings', 'board'), s => { guard = s.data()?.spam !== false; changed(); }, () => {});
 
 let uid = null;
 let panel = 'out';
@@ -99,16 +106,26 @@ export function mine() {
     .filter(x => x.owner === uid).sort((a, b) => b.at - a.at);
 }
 
-// Больше трёх ждущих проверки с одного телефона нельзя: защита от спама.
-// Форма спрашивает до загрузки фото, чтобы не грузить их зря
-export function checkLimit() {
-  const waiting = mine().filter(x => x.status === 'wait').length;
-  if (waiting >= WAIT_MAX) throw new Error('Три объявления уже ждут проверки. Дождитесь, пока админ их посмотрит.');
+// Последнее объявление с этого телефона: отметка в памяти телефона или свои объявления из базы
+function lastPost() {
+  let t = 0;
+  try { t = +localStorage.getItem('uv-last') || 0; } catch { /* памяти нет */ }
+  return Math.max(t, ...mine().map(x => x.at));
 }
 
-const why = e => (e?.code === 'permission-denied'
-  ? 'База не приняла запись. Проверьте поля и попробуйте ещё раз.'
-  : 'Нет связи с интернетом. Попробуйте ещё раз.');
+// Одно объявление в сутки. Форма спрашивает до загрузки фото, чтобы не грузить их зря.
+// Это подсказка телефону, а не замок: замок в правилах базы (limits)
+export function checkLimit() {
+  if (!guard) return;
+  const next = lastPost() + DAY;
+  if (next > Date.now()) throw new Error(`Одно объявление в сутки. Следующее можно отправить ${nextTime(next)}.`);
+}
+
+// База отказала при включённой защите: почти всегда с этого номера сегодня уже отправляли
+const why = e => (e?.code !== 'permission-denied'
+  ? 'Нет связи с интернетом. Попробуйте ещё раз.'
+  : guard ? 'Одно объявление в сутки. С этого номера сегодня уже отправляли. Попробуйте завтра.'
+    : 'База не приняла запись. Проверьте поля и попробуйте ещё раз.');
 // Связь медленная: база сама отправит запись, когда связь появится. Экран не ждёт дольше 8 секунд
 const sent = p => Promise.race([p, new Promise(r => setTimeout(r, 8000))]);
 async function user() {
@@ -124,14 +141,22 @@ export async function add(type, data) {
     const u = await user();
     const ref = doc(collection(db, type));
     item = { ...data, at: Date.now(), status: 'wait', owner: u.uid };
-    await sent(setDoc(ref, item));
+    // В той же записи отметка времени для телефона и для номера: по ним база считает сутки
+    const b = writeBatch(db);
+    const stamp = { at: serverTimestamp() };
+    b.set(doc(db, 'limits', 'u_' + u.uid), stamp);
+    b.set(doc(db, 'limits', 'p_' + data.phone), stamp);
+    b.set(ref, item);
+    await sent(b.commit());
     item.id = ref.id;
   } catch (e) { throw new Error(why(e)); }
+  try { localStorage.setItem('uv-last', String(item.at)); } catch { /* не страшно */ }
   return item;
 }
 
 const quiet = p => p.catch(e => toast(why(e)));
 export const setStatus = (type, id, status) => quiet(updateDoc(doc(db, type, id), { status }));
+export const setGuard = on => quiet(setDoc(doc(db, 'settings', 'board'), { spam: on }));
 export const remove = (type, id) => quiet(deleteDoc(doc(db, type, id)));
 
 // Вход админа в панели: out (не вошёл), checking (проверяем), in (админ), denied (чужая почта)
