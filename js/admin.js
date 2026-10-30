@@ -30,7 +30,7 @@ function card(x) {
   ].filter(Boolean).map(f => `<span>${esc(f)}</span>`).join('');
   const acts = x.status === 'wait'
     ? `<button class="btn a-ok" data-a="ok">${icon('ok')}Выложить</button><button class="btn btn-danger" data-a="no">Отклонить</button>`
-    : `<button class="btn btn-danger" data-a="no">Снять с доски</button>`;
+    : `<button class="btn btn-danger" data-a="off">Снять с доски</button>`;
   return `<li class="a-card" data-type="${x.type}" data-id="${x.id}">
     <p class="a-kind">${icon(k.id)}<b>${isReq ? 'Заявка' : 'Услуга'}</b> · ${k.name} · ${ago(x.at)}</p>
     <h3>${esc(isReq ? x.text : x.title)}</h3>
@@ -70,6 +70,7 @@ document.addEventListener('click', e => {
   const go = () => {
     if (a.dataset.a === 'ok') { store.setStatus(c.dataset.type, c.dataset.id, 'ok'); toast('Объявление на доске.'); }
     if (a.dataset.a === 'no') { store.setStatus(c.dataset.type, c.dataset.id, 'no'); toast('Объявление не на доске. Автор увидит это в «Моих».'); }
+    if (a.dataset.a === 'off') { store.setStatus(c.dataset.type, c.dataset.id, 'off'); toast('Объявление снято с доски. Автор увидит это в «Моих».'); }
     if (a.dataset.a === 'del-offer') { store.removeOffer(c.dataset.req, c.dataset.offer); toast('Предложение удалено.'); }
   };
   // Карточка уезжает вбок, потом список перерисовывается

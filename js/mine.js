@@ -9,6 +9,7 @@ const STATE = {
   wait: ['state-wait', 'На проверке'],
   ok: ['state-ok', 'На доске'],
   no: ['state-no', 'Не прошло проверку'],
+  off: ['state-off', 'Снято с доски'],
   done: ['state-done', 'Мастер найден'],
 };
 

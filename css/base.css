@@ -141,7 +141,7 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor;
 .state-wait { background: var(--lemon-soft); }
 .state-ok { background: var(--mint); }
 .state-no { background: var(--coral-soft); color: var(--danger); }
-.state-done { background: var(--paper-2); color: var(--ink-2); }
+.state-done, .state-off { background: var(--paper-2); color: var(--ink-2); }
 
 /* Появление: наклейка прыгает с пружиной. Без JS всё видно */
 .js .fade-in:not(.in) { opacity: 0; }
