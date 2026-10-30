@@ -5,6 +5,7 @@ import { ADMIN_PHONE } from './config.js';
 import { $, reduce, toast, watch, photo } from './ui.js';
 import { shotsField, upload } from './photos.js';
 import * as store from './store.js';
+import { send } from './stats.js';
 
 const back = href => `<a class="back" href="${href}" aria-label="Назад">${icon('arrow')}</a>`;
 
@@ -147,8 +148,10 @@ export async function submit(form) {
     }
     await store.add(form.dataset.type, { ...data, photos });
     keepContact(data.name, data.phone, data.wa);
+    send({ 'Объявления': { 'Отправили': isReq ? 'Работа' : 'Услуга' } });
     location.hash = '#/gotovo';
   } catch (e) {
+    if (e.message.startsWith('Одно объявление в сутки')) send({ 'Объявления': { 'Защита остановила': isReq ? 'Работа' : 'Услуга' } });
     toast(e.message);
     btn.disabled = false;
     btn.textContent = 'Отправить на проверку';

@@ -64,8 +64,10 @@ export function renderKinds() {
 }
 
 export function renderList() {
-  const list = items().filter(match);
   const isM = state.view === 'masters';
+  // Роботу ни объявлений, ни «Пока пусто»: в поиск идут заголовок, описание и подвал
+  if (store.robot) { $('#grid').hidden = $('#reqs').hidden = true; return; }
+  const list = items().filter(match);
   const empty = `<div class="empty"><p>${state.q || state.kind !== 'all' ? 'Ничего не нашлось.' : 'Пока пусто.'}</p>
     ${isM ? '<a class="btn btn-ink" href="#/razmestit/usluga">Предложить услугу</a>' : '<a class="btn btn-ink" href="#/razmestit/rabota">Предложить работу</a>'}</div>`;
   $('#grid').hidden = !isM;

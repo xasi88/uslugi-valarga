@@ -8,7 +8,10 @@ import {
   collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query, where, writeBatch, serverTimestamp,
 } from './fb.js';
 import { toast } from './ui.js';
-import { nextTime } from './util.js';
+import { nextTime, isBot } from './util.js';
+
+// Поисковый робот видит витрину без объявлений: имена и номера жителей не попадают в поиск (решение автора 2026-10-30)
+export const robot = isBot(navigator.userAgent);
 
 const DAY = 864e5;
 const TYPES = ['masters', 'requests'];
@@ -56,8 +59,8 @@ function stopAll(names) {
   TYPES.forEach(t => names.forEach(n => delete parts[t][n]));
 }
 
-if (!isPanel) {
-  // Доска: всем видны выложенные объявления
+if (!isPanel && !robot) {
+  // Доска: всем людям видны выложенные объявления
   TYPES.forEach(t => listen(t, 'board', query(collection(db, t), where('status', '==', 'ok'))));
   // Свои объявления любого статуса, если этот телефон уже входил
   onAuthStateChanged(auth, u => {
@@ -78,7 +81,7 @@ if (!isPanel) {
       snap => { n[t] = snap.size; if (TYPES.every(k => k in n)) show(n.masters + n.requests); },
       () => show(null)));
   });
-} else {
+} else if (isPanel) {
   // Панель: всё видит только почта админа. Чужую почту база не пустит
   onAuthStateChanged(auth, u => {
     stopAll(['all']);

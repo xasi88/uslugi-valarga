@@ -152,6 +152,7 @@ body[data-view="master"] .tab { display: none; }
 .foot { display: grid; gap: 12px; justify-items: start; padding-top: 32px; padding-bottom: 20px; color: var(--mint); font-size: var(--fs-small); }
 .foot a:not(.btn), .to-admin { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--mint); font-weight: 800; }
 .to-admin .wa { width: 20px; height: 20px; fill: currentColor; }
+.foot-note { font-size: var(--fs-cap); opacity: .75; }
 
 /* Нижнее меню: бумага с контуром. Выбранный пункт на лимонной пилюле, «Разместить» лимонным кругом */
 .tab {

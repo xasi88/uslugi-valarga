@@ -22,6 +22,10 @@ export function ago(t, now = Date.now()) {
   return d === 1 ? 'вчера' : `${d} ${plural(d, 'день', 'дня', 'дней')} назад`;
 }
 
+// Поисковый робот по строке браузера. Только известные имена: «bot» внутри названия телефона (Cubot) не в счёт
+const BOTS = /googlebot|google-inspectiontool|storebot-google|adsbot|mediapartners-google|yandex\w*bot|yandeximages|bingbot|duckduckbot|baiduspider|slurp|applebot|petalbot|mail\.ru_bot|ahrefsbot|semrushbot|mj12bot|bytespider|gptbot|claudebot|ccbot/i;
+export const isBot = ua => BOTS.test(String(ua ?? ''));
+
 // Когда можно снова, если до этого времени меньше суток: «сегодня после 18:40», «завтра после 9:05»
 export function nextTime(t, now = Date.now()) {
   const d = new Date(t);

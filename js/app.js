@@ -8,6 +8,7 @@ import * as post from './post.js';
 import { addShots, removeShot } from './photos.js';
 import { mineScreen } from './mine.js';
 import * as store from './store.js';
+import * as stats from './stats.js';
 import './install.js';
 
 // Адрес → экран и пункт меню
@@ -40,6 +41,7 @@ function route() {
   // «Назад» возвращает на витрину, только если человек пришёл с неё. Иначе ссылка из WhatsApp вела бы прочь с сайта
   if (view === 'master') canBack = prev === 'masters';
   document.body.dataset.view = view;
+  stats.screen(view);
   document.querySelectorAll('.tab a').forEach((a, i) => a.classList.toggle('on', i === tabI));
   $('#board').hidden = !onBoard;
   $('#screen').hidden = onBoard;

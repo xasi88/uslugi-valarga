@@ -8,7 +8,7 @@ const SHELL = [
   '/', '/admin/', '/manifest.webmanifest', '/admin/manifest.webmanifest',
   '/css/base.css', '/css/site.css', '/css/forms.css', '/css/admin.css',
   '/js/app.js', '/js/admin.js', '/js/board.js', '/js/config.js', '/js/fb.js', '/js/icons.js', '/js/install.js',
-  '/js/mine.js', '/js/photos.js', '/js/post.js', '/js/store.js', '/js/ui.js', '/js/util.js',
+  '/js/mine.js', '/js/photos.js', '/js/post.js', '/js/stats.js', '/js/store.js', '/js/ui.js', '/js/util.js',
   '/img/icon.svg', '/img/icon-192.png', '/img/admin-192.png',
 ];
 
