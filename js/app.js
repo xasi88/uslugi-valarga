@@ -61,6 +61,15 @@ store.onChange(() => {
   if (view === 'mine') post.showScreen(mineScreen());
 });
 
+// Значок «Админ» виден только на телефоне, где админ вошёл в панель. Число: ждут проверки
+store.adminWait(n => {
+  const a = $('#adm');
+  a.hidden = n === null;
+  a.querySelector('b').textContent = n || '';
+  a.querySelector('b').hidden = !n;
+  a.setAttribute('aria-label', n ? `Панель админа, на проверке: ${n}` : 'Панель админа');
+});
+
 function renderTab() {
   const TAB = [['all', 'Работы'], ['requests', 'Заявки'], ['add', 'Разместить'], ['mine', 'Мои']];
   document.querySelectorAll('.tab a').forEach((a, i) => { a.innerHTML = '<i>' + icon(TAB[i][0]) + '</i>' + TAB[i][1]; });

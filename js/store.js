@@ -3,7 +3,7 @@
 // Житель входит без аккаунта (анонимный вход, он его не видит): по этому входу «Мои»
 // находит свои объявления. Автор входит в панели через Google. Права проверяют правила базы.
 import {
-  auth, db, isPanel, GoogleAuthProvider, signInWithPopup, signInAnonymously, onAuthStateChanged, signOut,
+  auth, db, adminAuth, adminDb, isPanel, GoogleAuthProvider, signInWithPopup, signInAnonymously, onAuthStateChanged, signOut,
   collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query, where,
 } from './fb.js';
 import { toast } from './ui.js';
@@ -41,6 +41,10 @@ function list(type) {
 
 let uid = null;
 let panel = 'out';
+// Значок «Админ» на доске: число объявлений на проверке или null (этот телефон не входил почтой админа)
+let waitCount = null;
+let onWait = () => {};
+export const adminWait = fn => { onWait = fn; fn(waitCount); };
 let stops = [];
 function stopAll(names) {
   stops.forEach(s => s());
@@ -58,6 +62,18 @@ if (!isPanel) {
     uid = u?.uid || null;
     if (u) stops = TYPES.map(t => listen(t, 'mine', query(collection(db, t), where('owner', '==', u.uid))));
     changed();
+  });
+  // Вход панели на этом телефоне: доска считает объявления на проверке. Чужой почте база откажет
+  let stopWait = [];
+  onAuthStateChanged(adminAuth, u => {
+    stopWait.forEach(s => s());
+    stopWait = [];
+    const n = {};
+    const show = v => { waitCount = v; onWait(v); };
+    show(null);
+    if (u) stopWait = TYPES.map(t => onSnapshot(query(collection(adminDb, t), where('status', '==', 'wait')),
+      snap => { n[t] = snap.size; if (TYPES.every(k => k in n)) show(n.masters + n.requests); },
+      () => show(null)));
   });
 } else {
   // Панель: всё видит только почта админа. Чужую почту база не пустит

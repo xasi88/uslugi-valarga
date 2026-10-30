@@ -15,6 +15,10 @@ export const isPanel = location.pathname.includes('/admin/');
 const app = initializeApp(FIREBASE, isPanel ? 'admin' : undefined);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+// Доска видит вход панели на этом телефоне: так появляется значок «Админ»
+const adminApp = isPanel ? app : initializeApp(FIREBASE, 'admin');
+export const adminAuth = isPanel ? auth : getAuth(adminApp);
+export const adminDb = isPanel ? db : getFirestore(adminApp);
 
 export {
   GoogleAuthProvider, signInWithPopup, signInAnonymously, onAuthStateChanged, signOut,

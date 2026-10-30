@@ -38,6 +38,16 @@ body { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
   .demo { padding: 3px 8px; font-size: 11px; }
 }
 .round svg { stroke-width: 2.6; }
+/* «Админ»: только у админа, чёрная пилюля как в панели, число на проверке лимонным кружком */
+.adm {
+  display: inline-flex; align-items: center; gap: 7px; height: 46px; padding: 0 14px;
+  border: var(--edge); border-radius: var(--r-pill); background: var(--ink); color: var(--paper); box-shadow: var(--drop-sm);
+  font-size: var(--fs-small); font-weight: 800; text-decoration: none; -webkit-tap-highlight-color: transparent;
+  transition: transform var(--t-press), box-shadow var(--t-press);
+}
+.adm:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
+.adm:focus-visible { outline: 3px solid var(--lemon); outline-offset: 3px; }
+.adm b { min-width: 24px; padding: 2px 7px; border-radius: var(--r-pill); background: var(--lemon); color: var(--ink); font-size: 12px; text-align: center; }
 .demo { padding: 4px 10px; border: var(--edge-thin); border-radius: var(--r-pill); white-space: nowrap; background: var(--lemon-soft); color: var(--ink); font-size: 12px; font-weight: 800; }
 
 /* Заголовок доски и поиск */
@@ -162,6 +172,7 @@ body[data-view="master"] .tab { display: none; }
 @media (max-width: 420px) { .install { grid-template-columns: 1fr; } }
 
 .foot { padding-top: 32px; padding-bottom: 20px; color: var(--mint); font-size: var(--fs-small); }
+.foot a { display: inline-flex; align-items: center; min-height: 44px; color: var(--mint); font-weight: 800; }
 
 /* Нижнее меню: бумага с контуром. Выбранный пункт на лимонной пилюле, «Разместить» лимонным кругом */
 .tab {
