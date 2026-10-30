@@ -1,4 +1,4 @@
-/* Экраны «Разместить», «Отправлено», «Мои» и окно «Предложить цену».
+/* Экраны «Разместить», «Отправлено», «Мои».
    Цвета, шрифты и движение только из css/base.css. */
 .scr { max-width: var(--page-text); margin: 0 auto; padding: 8px 16px 24px; display: grid; gap: 14px; align-content: start; }
 .scr-lead { color: var(--mint); font-size: var(--fs-lead); }
@@ -8,7 +8,7 @@
 
 /* Форма: один лист-наклейка на бумаге */
 .scr.form { width: calc(100% - 32px); margin: 8px auto 24px; padding: 18px 18px 22px; border: var(--edge); border-radius: 24px; background: var(--paper); color: var(--ink); box-shadow: var(--drop); }
-.form .scr-lead, .sheet .scr-lead { color: var(--ink-2); }
+.form .scr-lead { color: var(--ink-2); }
 .form .back { background: var(--mint); }
 
 /* Выбор «Мне нужен мастер» или «Я мастер»: две наклейки с тоном слева */
@@ -72,25 +72,6 @@
 .done-mark svg { width: 36px; height: 36px; stroke-width: 2.8; }
 .done .scr-lead { max-width: 32ch; }
 
-/* Окно снизу экрана: лист бумаги с контуром */
-.sheet-wrap { position: fixed; inset: 0; z-index: 50; }
-.sheet-back { position: absolute; inset: 0; background: rgba(11, 13, 23, .5); opacity: 0; transition: opacity .3s; }
-.sheet {
-  position: absolute; left: 0; right: 0; bottom: 0;
-  max-width: 560px; max-height: 92vh; margin: 0 auto; overflow: auto;
-  display: grid; gap: 10px;
-  padding: 8px 16px calc(20px + env(safe-area-inset-bottom));
-  border: var(--edge); border-bottom: 0; border-radius: 26px 26px 0 0;
-  background: var(--paper); color: var(--ink);
-  transform: translateY(105%); transition: transform .4s var(--ease);
-}
-.sheet h2 { margin-top: 4px; }
-.sheet .scr-lead { font-size: 15px; }
-.sheet-wrap.open .sheet { transform: none; }
-.sheet-wrap.open .sheet-back { opacity: 1; }
-.grip { justify-self: center; width: 44px; height: 5px; margin-bottom: 6px; border-radius: 3px; background: var(--ink); opacity: .25; }
-body.locked { overflow: hidden; }
-
 /* «Мои»: наклейка с фото слева, статус и кнопки */
 .mine { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }
 .mine-item { display: grid; grid-template-columns: 72px 1fr; gap: 6px 14px; padding: 14px; border: var(--edge); border-radius: var(--r-card); background: var(--paper); color: var(--ink); box-shadow: var(--drop); }
@@ -98,7 +79,7 @@ body.locked { overflow: hidden; }
 .mine-item .ph > svg.i { width: 24px; height: 24px; margin: -12px 0 0 -12px; }
 .mine-kind { font-size: var(--fs-cap); font-weight: 700; color: var(--ink-2); }
 .mine-item h3 { font-size: 16px; }
-.mine-item .offers-wrap, .mine-acts { grid-column: 1 / -1; }
+.mine-acts { grid-column: 1 / -1; }
 .mine-acts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
 .mine-acts .btn { flex: 1 1 auto; min-height: 46px; }
 .empty-mine { display: grid; gap: 16px; justify-items: start; padding: 18px; border: var(--edge); border-radius: var(--r-card); background: var(--paper); color: var(--ink-2); box-shadow: var(--drop); font-weight: 700; }

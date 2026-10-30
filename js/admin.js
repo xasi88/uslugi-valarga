@@ -1,7 +1,7 @@
-// Панель админа: проверка новых объявлений, снятие с доски, удаление предложений цены.
+// Панель админа: проверка новых объявлений и снятие с доски.
 // Классы панели начинаются с a-. Данные через store.js, как у доски.
 import { icon, waIcon, kindById } from './icons.js';
-import { esc, money, ago, wa, phoneNice, photoUrl } from './util.js';
+import { esc, ago, wa, phoneNice, photoUrl, priceText as cost, payText } from './util.js';
 import { CLOUDINARY } from './config.js';
 import { $, toast } from './ui.js';
 import * as store from './store.js';
@@ -9,17 +9,13 @@ import './install.js';
 
 let tab = 'wait';
 
-const priceText = x => (x.type === 'requests'
-  ? (x.budget ? `до ${money(x.budget)}` : 'договорная')
-  : (x.price ? `${x.from ? 'от ' : ''}${money(x.price)}${x.unit ? ' ' + x.unit : ''}` : 'договорная'));
+const priceText = x => (x.type === 'requests' ? payText(x) : cost(x) + (x.price && x.unit ? ' ' + x.unit : ''));
 
 function items(status) {
   const tagT = type => x => ({ ...x, type });
   return [...store.all('masters').map(tagT('masters')), ...store.all('requests').map(tagT('requests'))]
     .filter(x => x.status === status).sort((a, b) => b.at - a.at);
 }
-const offers = () => store.all('requests').filter(r => r.status === 'ok')
-  .flatMap(r => r.offers.map(o => ({ ...o, req: r }))).sort((a, b) => b.at - a.at);
 
 function card(x) {
   const k = kindById(x.kind);
@@ -32,7 +28,7 @@ function card(x) {
     ? `<button class="btn a-ok" data-a="ok">${icon('ok')}Выложить</button><button class="btn btn-danger" data-a="no">Отклонить</button>`
     : `<button class="btn btn-danger" data-a="off">Снять с доски</button>`;
   return `<li class="a-card" data-type="${x.type}" data-id="${x.id}">
-    <p class="a-kind">${icon(k.id)}<b>${isReq ? 'Заявка' : 'Услуга'}</b> · ${k.name} · ${ago(x.at)}</p>
+    <p class="a-kind">${icon(k.id)}<b>${isReq ? 'Работа' : 'Услуга'}</b> · ${k.name} · ${ago(x.at)}</p>
     <h3>${esc(isReq ? x.text : x.title)}</h3>
     ${x.photos?.length ? `<div class="a-shots">${x.photos.map(p => `<img src="${esc(photoUrl(p, 200, CLOUDINARY.cloud))}" alt="">`).join('')}</div>` : ''}
     <p class="a-facts">${facts}</p>
@@ -41,24 +37,14 @@ function card(x) {
   </li>`;
 }
 
-function offerCard(o) {
-  return `<li class="a-card" data-req="${o.req.id}" data-offer="${o.id}">
-    <p class="a-kind">${icon(o.req.kind)}<b>Предложение</b> · ${ago(o.at)}</p>
-    <h3>${esc(o.name)}: ${money(o.price)}</h3>
-    <p class="a-facts"><span>на заявку «${esc(o.req.text)}»</span>${o.note ? `<span>${esc(o.note)}</span>` : ''}</p>
-    <p class="a-who"><a href="${wa(o.phone, 'Здравствуйте! Пишу как админ доски «Услуги Валарга».')}" target="_blank" rel="noopener">${waIcon}${phoneNice(o.phone)}</a></p>
-    <div class="a-acts"><button class="btn btn-danger" data-a="del-offer">Удалить предложение</button></div>
-  </li>`;
-}
-
 function render() {
-  const lists = { wait: items('wait'), ok: items('ok'), offers: offers() };
-  const names = { wait: 'Проверка', ok: 'На доске', offers: 'Предложения' };
+  const lists = { wait: items('wait'), ok: items('ok') };
+  const names = { wait: 'Проверка', ok: 'На доске' };
   $('#a-tabs').innerHTML = Object.keys(names).map(k =>
     `<button class="chip" role="tab" data-tab="${k}" aria-pressed="${tab === k}">${names[k]} <b>${lists[k].length}</b></button>`).join('');
   const list = lists[tab];
-  const empty = { wait: 'Новых объявлений нет. Всё проверено.', ok: 'На доске пока пусто.', offers: 'Предложений цены пока нет.' };
-  $('#a-list').innerHTML = list.length ? list.map(tab === 'offers' ? offerCard : card).join('') : `<li class="a-empty">${empty[tab]}</li>`;
+  const empty = { wait: 'Новых объявлений нет. Всё проверено.', ok: 'На доске пока пусто.' };
+  $('#a-list').innerHTML = list.length ? list.map(card).join('') : `<li class="a-empty">${empty[tab]}</li>`;
 }
 
 document.addEventListener('click', e => {
@@ -71,7 +57,6 @@ document.addEventListener('click', e => {
     if (a.dataset.a === 'ok') { store.setStatus(c.dataset.type, c.dataset.id, 'ok'); toast('Объявление на доске.'); }
     if (a.dataset.a === 'no') { store.setStatus(c.dataset.type, c.dataset.id, 'no'); toast('Объявление не на доске. Автор увидит это в «Моих».'); }
     if (a.dataset.a === 'off') { store.setStatus(c.dataset.type, c.dataset.id, 'off'); toast('Объявление снято с доски. Автор увидит это в «Моих».'); }
-    if (a.dataset.a === 'del-offer') { store.removeOffer(c.dataset.req, c.dataset.offer); toast('Предложение удалено.'); }
   };
   // Карточка уезжает вбок, потом список перерисовывается
   c.classList.add('a-gone');

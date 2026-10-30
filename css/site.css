@@ -1,4 +1,4 @@
-/* Доска «Наклейки»: шапка, заголовок, фильтр, сетка работ, заявки, страница мастера, меню.
+/* Доска «Наклейки»: шапка, заголовок, фильтр, сетка услуг, работа, страница мастера, меню.
    Цвета, шрифты и движение только из css/base.css. */
 body { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 .wrap { max-width: var(--page); margin: 0 auto; padding: 0 16px; }
@@ -65,8 +65,7 @@ body { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 .search input:focus { outline: 3px solid var(--lemon); outline-offset: 2px; }
 .search svg { position: absolute; left: 16px; top: 17px; color: var(--ink); stroke-width: 2.6; }
 .chips-wrap { position: sticky; top: 68px; z-index: 10; background: var(--emerald); }
-.chips { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding: 16px max(16px, calc((100% - var(--page)) / 2 + 16px)) 14px; }
-.chips::-webkit-scrollbar { display: none; }
+.chips { display: flex; gap: 10px; overflow-x: auto; padding: 16px max(16px, calc((100% - var(--page)) / 2 + 16px)) 14px; }
 
 /* Сетка работ: наклейки, первая крупно. Соседние чуть повёрнуты в разные стороны */
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 14px; padding: 10px 0 12px; }
@@ -103,7 +102,7 @@ body { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 .tile-who svg { width: 15px; height: 15px; color: var(--emerald); stroke-width: 3; }
 .empty { grid-column: 1 / -1; display: grid; gap: 14px; justify-items: start; padding: 20px; border: var(--edge); border-radius: var(--r-card); background: var(--paper); color: var(--ink-2); box-shadow: var(--drop); font-weight: 700; }
 
-/* Заявки: наклейки ровно, без наклона: в них много текста */
+/* Работа: наклейки ровно, без наклона: в них много текста */
 .reqs { list-style: none; display: grid; gap: 20px; max-width: var(--page-text); margin: 0 auto; padding: 10px 16px 8px; }
 .req { display: grid; gap: 10px; padding: 16px; border: var(--edge); border-radius: var(--r-card); background: var(--paper); color: var(--ink); box-shadow: var(--drop); }
 .req-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
@@ -118,34 +117,10 @@ body { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 .req-shots .ph { width: 72px; height: 72px; border: var(--edge-thin); border-radius: var(--r-sm); }
 .req-acts { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-top: 4px; }
 
-/* Предложения цены: мятная полоса раскрывает список, дешёвое сверху */
-.offers-btn {
-  width: 100%; min-height: 48px; padding: 0 14px;
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  border: var(--edge-thin); border-radius: 14px; background: var(--mint-soft); color: var(--ink);
-  font-size: 15px; font-weight: 700; text-align: left; cursor: pointer;
-}
-.offers-btn b { font-weight: 800; }
-.offers-btn > svg { transition: transform var(--t) var(--spring); }
-.open .offers-btn > svg { transform: rotate(180deg); }
-.offers { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s var(--ease); }
-.offers > div { overflow: hidden; }
-.open .offers { grid-template-rows: 1fr; }
-.offers ul { list-style: none; margin: 0; padding: 4px 2px 0; }
-.offers li { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 2px dashed rgba(11, 13, 23, .16); }
-.offers li:last-child { border-bottom: 0; }
-.o-name { font-weight: 800; }
-.o-name em { margin-left: 8px; padding: 1px 8px; border: 2px solid var(--ink); border-radius: var(--r-pill); background: var(--lemon); font-style: normal; font-size: 11px; font-weight: 800; white-space: nowrap; }
-.o-name small { display: block; margin-top: 2px; font-size: var(--fs-cap); font-weight: 600; color: var(--ink-3); }
-.o-price { font: 800 15px var(--font-display); }
-.offers .btn { min-height: 44px; width: 44px; }
-.offers-none { font-size: var(--fs-small); font-weight: 700; color: var(--ink-3); }
-
 /* Страница мастера: фото наклейкой, листаются пальцем, ниже карточка и кнопки */
 .master { max-width: var(--page-text); margin: 0 auto; }
 .gal { position: relative; margin: 8px 16px 0; border: var(--edge); border-radius: 24px; overflow: hidden; box-shadow: var(--drop); }
-.gal-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
-.gal-track::-webkit-scrollbar { display: none; }
+.gal-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; }
 .gal-track .ph { flex: 0 0 100%; aspect-ratio: 4 / 5; max-height: 68vh; scroll-snap-align: start; }
 .gal .round { position: absolute; z-index: 2; top: 12px; left: 12px; }
 .gal .round svg { transform: rotate(180deg); }

@@ -1,5 +1,6 @@
 // Хранилище объявлений: база Firestore (Firebase). Экраны знают только функции ниже.
-// Статусы: wait (на проверке), ok (на доске), no (отклонено), off (снято админом с доски), done (мастер найден).
+// Статусы: wait (на проверке), ok (на доске), no (отклонено), off (снято админом с доски), done (человек найден).
+// masters: услуги, requests: работа от жителей. Торга нет (решение автора 2026-10-30): старые предложения цены не читаются.
 // Житель входит без аккаунта (анонимный вход, он его не видит): по этому входу «Мои»
 // находит свои объявления. Автор входит в панели через Google. Права проверяют правила базы.
 import {
@@ -12,7 +13,7 @@ const WAIT_MAX = 3;
 const TYPES = ['masters', 'requests'];
 
 // Каждая подписка кладёт свои документы отдельно, экраны видят их вместе
-const parts = { masters: {}, requests: {}, offers: {} };
+const parts = { masters: {}, requests: {} };
 const subs = new Set();
 export const onChange = fn => subs.add(fn);
 const changed = () => subs.forEach(fn => fn());
@@ -33,11 +34,7 @@ function merged(type) {
   Object.values(parts[type]).forEach(m => m.forEach((v, k) => out.set(k, v)));
   return [...out.values()];
 }
-const withOffers = r => ({ ...r, offers: merged('offers').filter(o => o.reqId === r.id) });
-function list(type) {
-  const xs = merged(type).sort((a, b) => b.at - a.at);
-  return type === 'requests' ? xs.map(withOffers) : xs;
-}
+const list = type => merged(type).sort((a, b) => b.at - a.at);
 
 let uid = null;
 let panel = 'out';
@@ -49,13 +46,12 @@ let stops = [];
 function stopAll(names) {
   stops.forEach(s => s());
   stops = [];
-  TYPES.concat('offers').forEach(t => names.forEach(n => delete parts[t][n]));
+  TYPES.forEach(t => names.forEach(n => delete parts[t][n]));
 }
 
 if (!isPanel) {
-  // Доска: всем видны выложенные объявления и все предложения цены
+  // Доска: всем видны выложенные объявления
   TYPES.forEach(t => listen(t, 'board', query(collection(db, t), where('status', '==', 'ok'))));
-  listen('offers', 'all', collection(db, 'offers'));
   // Свои объявления любого статуса, если этот телефон уже входил
   onAuthStateChanged(auth, u => {
     stopAll(['mine']);
@@ -88,7 +84,7 @@ if (!isPanel) {
       stopAll(['all']);
       changed();
     };
-    stops = [...TYPES.map(t => listen(t, 'all', collection(db, t), fail)), listen('offers', 'all', collection(db, 'offers'), fail)];
+    stops = TYPES.map(t => listen(t, 'all', collection(db, t), fail));
   });
 }
 
@@ -134,19 +130,9 @@ export async function add(type, data) {
   return item;
 }
 
-// Предложение цены видно сразу (решение автора). Один мастер: одно предложение на заявку
-export async function addOffer(reqId, data) {
-  if (!find('requests', reqId)) throw new Error('Заявка уже снята с доски.');
-  try {
-    const u = await user();
-    await sent(setDoc(doc(db, 'offers', `${reqId}_${u.uid}`), { ...data, reqId, at: Date.now(), owner: u.uid }));
-  } catch (e) { throw new Error(why(e)); }
-}
-
 const quiet = p => p.catch(e => toast(why(e)));
 export const setStatus = (type, id, status) => quiet(updateDoc(doc(db, type, id), { status }));
 export const remove = (type, id) => quiet(deleteDoc(doc(db, type, id)));
-export const removeOffer = (reqId, offerId) => quiet(deleteDoc(doc(db, 'offers', offerId)));
 
 // Вход админа в панели: out (не вошёл), checking (проверяем), in (админ), denied (чужая почта)
 export const adminState = () => panel;

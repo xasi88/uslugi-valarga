@@ -1,6 +1,6 @@
-// Доска: витрина работ мастеров, заявки, страница мастера, фильтр и поиск.
+// Доска: витрина услуг мастеров, работа от жителей, страница мастера, фильтр и поиск.
 import { icon, waIcon, phoneIcon, KINDS, kindById } from './icons.js';
-import { esc, money, plural, ago, wa, priceText } from './util.js';
+import { esc, ago, wa, priceText, payText } from './util.js';
 import { $, photo, watch } from './ui.js';
 import * as store from './store.js';
 
@@ -20,39 +20,23 @@ function tile(m, i) {
   </a>`;
 }
 
-// Предложения цены: на доске и в «Моих». Дешёвое сверху
-export function offersBlock(r) {
-  const offers = [...r.offers].sort((a, b) => a.price - b.price);
-  const n = offers.length;
-  if (!n) return '<p class="offers-none">Предложений пока нет.</p>';
-  return `<button class="offers-btn" aria-expanded="false">
-      <span>${n} ${plural(n, 'предложение', 'предложения', 'предложений')} · от <b class="num">${money(offers[0].price)}</b></span>${icon('down')}
-    </button>
-    <div class="offers"><div><ul>${offers.map((o, i) => `<li>
-      <span class="o-name">${esc(o.name)}${i === 0 && n > 1 ? '<em>дешевле всех</em>' : ''}<small>${o.note ? esc(o.note) : ago(o.at)}</small></span>
-      <b class="o-price num">${money(o.price)}</b>
-      <a class="btn btn-fill sq" href="${wa(o.phone, `Здравствуйте! Видел ваше предложение на доске «Услуги Валарга»: ${money(o.price)}.`)}" target="_blank" rel="noopener" aria-label="Написать: ${esc(o.name)}">${waIcon}</a>
-    </li>`).join('')}</ul></div></div>`;
-}
-
 function reqRow(r, i) {
   const k = kindById(r.kind);
-  const hello = `Здравствуйте! Видел вашу заявку на доске «Услуги Валарга»: ${r.text}.`;
+  const hello = `Здравствуйте! Видел вашу работу на доске «Услуги Валарга»: ${r.text}.`;
   const shots = r.photos?.length ? `<div class="req-shots">${r.photos.map(p => photo(p, k, '', 160) + '</div>').join('')}</div>` : '';
   return `<li class="req fade-in" style="${delay(i)}">
-    <div class="req-top"><p class="req-kind">${icon(k.id)}${k.name} · ${ago(r.at)}</p><b class="req-budget num">${r.budget ? 'до ' + money(r.budget) : 'договорная'}</b></div>
+    <div class="req-top"><p class="req-kind">${icon(k.id)}${k.name} · ${ago(r.at)}</p><b class="req-budget num">${esc(payText(r))}</b></div>
     <h3>${esc(r.text)}</h3>
     ${r.when || r.place ? `<p class="req-meta">${r.when ? `<span>${icon('clock')}${esc(r.when)}</span>` : ''}${r.place ? `<span>${icon('pin')}${esc(r.place)}</span>` : ''}</p>` : ''}
     ${shots}
-    ${offersBlock(r)}
     <div class="req-acts">
-      <button class="btn btn-ink" data-act="offer" data-id="${r.id}">Предложить цену</button>
-      <a class="btn btn-line sq" href="${wa(r.phone, hello)}" target="_blank" rel="noopener" aria-label="Написать в WhatsApp">${waIcon}</a>
+      <a class="btn btn-ink" href="${wa(r.phone, hello)}" target="_blank" rel="noopener">${waIcon}Написать в WhatsApp</a>
+      <a class="btn btn-line sq" href="tel:+${r.phone}" aria-label="Позвонить: ${esc(r.name)}">${phoneIcon}</a>
     </div>
   </li>`;
 }
 
-// Поиск по словам: что делает, имя, вид работ, текст заявки
+// Поиск по словам: что делает, имя, вид работ, текст работы
 function match(x) {
   if (state.kind !== 'all' && x.kind !== state.kind) return false;
   if (!state.q) return true;
@@ -75,8 +59,8 @@ export function renderKinds() {
 export function renderList() {
   const list = items().filter(match);
   const isM = state.view === 'masters';
-  const empty = `<div class="empty"><p>${state.q || state.kind !== 'all' ? 'Ничего не нашлось.' : 'Пока пусто.'} ${isM ? 'Оставьте заявку: мастер сам предложит цену.' : 'Заявок нет.'}</p>
-    <a class="btn btn-ink" href="#/razmestit/zayavka">Оставить заявку</a></div>`;
+  const empty = `<div class="empty"><p>${state.q || state.kind !== 'all' ? 'Ничего не нашлось.' : 'Пока пусто.'}</p>
+    ${isM ? '<a class="btn btn-ink" href="#/razmestit/usluga">Предложить услугу</a>' : '<a class="btn btn-ink" href="#/razmestit/rabota">Предложить работу</a>'}</div>`;
   $('#grid').hidden = !isM;
   $('#reqs').hidden = isM;
   const box = isM ? $('#grid') : $('#reqs');
@@ -92,7 +76,7 @@ export function pickKind(id) {
 
 export function masterPage(id) {
   const m = store.find('masters', id);
-  if (!m || m.status !== 'ok') return `<div class="scr empty"><p>Объявление снято с доски.</p><a class="btn btn-ink" href="#/">К работам</a></div>`;
+  if (!m || m.status !== 'ok') return `<div class="scr empty"><p>Объявление снято с доски.</p><a class="btn btn-ink" href="#/">К услугам</a></div>`;
   const k = kindById(m.kind);
   const shots = m.photos?.length ? m.photos : [null];
   const hello = `Здравствуйте! Пишу с доски «Услуги Валарга». Нужна ваша услуга: ${m.title}.`;

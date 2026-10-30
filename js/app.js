@@ -1,5 +1,6 @@
 // Доска «Услуги Валарга»: переходы между экранами, меню, поиск, касания.
-// Экраны: витрина и заявки (board.js), «Разместить» и «Предложить цену» (post.js), «Мои» (mine.js).
+// Экраны: услуги и работа (board.js), «Разместить» (post.js), «Мои» (mine.js).
+// Внутри кода «Работа» зовётся requests: так называется собрание в базе.
 import { icon } from './icons.js';
 import { $, toast } from './ui.js';
 import * as board from './board.js';
@@ -12,16 +13,19 @@ import './install.js';
 // Адрес → экран и пункт меню
 const ROUTES = {
   '#/': ['masters', 0],
-  '#/zayavki': ['requests', 1],
+  '#/rabota': ['requests', 1],
   '#/razmestit': ['post', 2, post.choiceScreen],
-  '#/razmestit/zayavka': ['post', 2, post.requestForm],
+  '#/razmestit/rabota': ['post', 2, post.requestForm],
   '#/razmestit/usluga': ['post', 2, post.masterForm],
   '#/gotovo': ['post', 2, post.doneScreen],
   '#/moi': ['mine', 3, mineScreen],
 };
+// Старые адреса до 2026-10-30: ссылки из WhatsApp ведут туда же
+ROUTES['#/zayavki'] = ROUTES['#/rabota'];
+ROUTES['#/razmestit/zayavka'] = ROUTES['#/razmestit/rabota'];
 const HEAD = {
-  masters: ['Работы мастеров <em>Валарга</em>', 'Смотрите, как мастер уже сделал. Цена на фото.'],
-  requests: ['Заявки <em>жителей</em>', 'Людям нужен мастер. Предложите свою цену.'],
+  masters: ['Услуги <em>мастеров</em>', 'Смотрите, как мастер уже сделал. Цена на фото.'],
+  requests: ['Работа <em>в Валарге</em>', 'Жители предлагают работу. Оплата указана сразу.'],
 };
 
 let boardY = 0;
@@ -71,7 +75,7 @@ store.adminWait(n => {
 });
 
 function renderTab() {
-  const TAB = [['all', 'Работы'], ['requests', 'Заявки'], ['add', 'Разместить'], ['mine', 'Мои']];
+  const TAB = [['all', 'Услуги'], ['job', 'Работа'], ['add', 'Разместить'], ['mine', 'Мои']];
   document.querySelectorAll('.tab a').forEach((a, i) => { a.innerHTML = '<i>' + icon(TAB[i][0]) + '</i>' + TAB[i][1]; });
 }
 
@@ -81,17 +85,13 @@ document.addEventListener('click', e => {
   if (opt) { post.pick(opt); return; }
   const k = t.closest('[data-kind]');
   if (k) { board.pickKind(k.dataset.kind); return; }
-  const ob = t.closest('.offers-btn');
-  if (ob) { ob.setAttribute('aria-expanded', ob.parentElement.classList.toggle('open')); return; }
   const shot = t.closest('[data-shot]');
   if (shot) { removeShot(shot.closest('form'), +shot.dataset.shot); return; }
   const act = t.closest('[data-act]');
   if (!act) return;
   const { act: a, id, type } = act.dataset;
   if (a === 'back' && canBack) { e.preventDefault(); history.back(); }
-  if (a === 'offer') post.openOffer(id);
-  if (a === 'close') post.closeOffer();
-  if (a === 'found') { store.setStatus('requests', id, 'done'); toast('Заявка снята с доски. Хорошей работы!'); }
+  if (a === 'found') { store.setStatus('requests', id, 'done'); toast('Объявление снято с доски. Хорошей работы!'); }
   if (a === 'del' && confirm('Удалить объявление? Вернуть его не получится.')) store.remove(type, id);
   if (a === 'search') {
     const s = $('#search');
@@ -115,13 +115,10 @@ document.addEventListener('input', e => {
 
 document.addEventListener('submit', e => {
   e.preventDefault();
-  const f = e.target;
-  if (f.classList.contains('sheet')) post.submitOffer(f);
-  else post.submit(f);
+  post.submit(e.target);
 });
 
 addEventListener('scroll', () => $('#top').classList.toggle('scrolled', scrollY > 8), { passive: true });
-addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#sheet').hidden) post.closeOffer(); });
 addEventListener('hashchange', route);
 
 renderTab();

@@ -1,8 +1,7 @@
-// Экран «Мои»: объявления с этого телефона, их статус, предложения цены, «Мастер найден».
+// Экран «Мои»: объявления с этого телефона, их статус, «Нашёл человека» у работы.
 import { icon, kindById } from './icons.js';
-import { esc, ago, money, priceText } from './util.js';
+import { esc, ago, priceText, payText } from './util.js';
 import { photo } from './ui.js';
-import { offersBlock } from './board.js';
 import * as store from './store.js';
 
 const STATE = {
@@ -10,7 +9,7 @@ const STATE = {
   ok: ['state-ok', 'На доске'],
   no: ['state-no', 'Не прошло проверку'],
   off: ['state-off', 'Снято с доски'],
-  done: ['state-done', 'Мастер найден'],
+  done: ['state-done', 'Человек найден'],
 };
 
 function item(x) {
@@ -18,15 +17,14 @@ function item(x) {
   const isReq = x.type === 'requests';
   const [cls, label] = STATE[x.status] || STATE.wait;
   const acts = [];
-  if (isReq && x.status === 'ok') acts.push(`<button class="btn btn-ink" data-act="found" data-id="${x.id}">Мастер найден</button>`);
+  if (isReq && x.status === 'ok') acts.push(`<button class="btn btn-ink" data-act="found" data-id="${x.id}">Нашёл человека</button>`);
   acts.push(`<button class="btn btn-line" data-act="del" data-type="${x.type}" data-id="${x.id}">Удалить</button>`);
-  const cost = isReq ? (x.budget ? `до ${money(x.budget)}` : 'договорная') : priceText(x, true);
+  const cost = isReq ? payText(x) : priceText(x, true);
   return `<li class="mine-item">
     ${photo(x.photos?.[0], k, '', 160)}</div>
-    <p class="mine-kind">${isReq ? 'Заявка' : 'Услуга'} · ${k.name} · ${ago(x.at)}</p>
+    <p class="mine-kind">${isReq ? 'Работа' : 'Услуга'} · ${k.name} · ${ago(x.at)}</p>
     <h3>${esc(isReq ? x.text : x.title)} <span class="num">· ${cost}</span></h3>
     <p><span class="state ${cls}">${label}</span></p>
-    ${isReq && x.status !== 'wait' ? `<div class="offers-wrap">${offersBlock(x)}</div>` : ''}
     <div class="mine-acts">${acts.join('')}</div>
   </li>`;
 }

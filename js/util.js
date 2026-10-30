@@ -53,6 +53,9 @@ export function priceText(m, short) {
   return short ? base + unitShort(m.unit) : base;
 }
 
+// Оплата работы: «3 000 ₽ за день». Без суммы: «договорная»
+export const payText = r => (r.budget ? money(r.budget) + (r.unit ? ' ' + r.unit : '') : 'договорная');
+
 // Адрес фото нужного размера, обрезка 4 на 5. Фото из пробных данных (data:) отдаётся как есть
 export function photoUrl(id, w, cloud) {
   if (/^(data:|https?:)/.test(id)) return id;
