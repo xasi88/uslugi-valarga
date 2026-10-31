@@ -121,7 +121,7 @@ body { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 .gal-track .ph { cursor: zoom-in; }
 /* Фото на весь экран: касание закрывает */
 .viewer { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 16px; background: var(--ink); cursor: zoom-out; }
-.viewer img { max-width: 100%; max-height: calc(100dvh - 32px); object-fit: contain; }
+.viewer img { width: 100%; height: calc(100dvh - 32px); object-fit: contain; }
 .viewer .round { position: absolute; top: calc(12px + env(safe-area-inset-top)); right: 12px; }
 /* Связь: WhatsApp и «Позвонить» поровну. Нет WhatsApp: одна кнопка на всю ширину */
 .req-acts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 4px; }
