@@ -2,7 +2,7 @@
 // Цифры показывает «Статистика проектов», раздел «Валарг». Имя группы меняешь здесь: меняешь и там.
 // В Метрику уходят только экраны, нажатия и виды работ. Имена, номера и тексты объявлений не уходят.
 // Роботу и компьютеру (localhost) счётчик не нужен: он молчит.
-import { kindOf } from './icons.js';
+import { kindOf, plainName } from './icons.js';
 import { robot } from './store.js';
 
 const YM = 113926697;
@@ -39,7 +39,7 @@ document.addEventListener('click', e => {
   const k = e.target.closest('[data-kind]');
   if (k) {
     const goods = document.body.dataset.view === 'goods';
-    send({ [goods ? 'Категория товаров' : 'Вид работ']: { [k.dataset.kind === 'all' ? 'Все' : kindOf(goods ? 'goods' : 'masters', k.dataset.kind).name]: where() } });
+    send({ [goods ? 'Категория товаров' : 'Вид работ']: { [k.dataset.kind === 'all' ? 'Все' : plainName(kindOf(goods ? 'goods' : 'masters', k.dataset.kind))]: where() } });
     return;
   }
   const a = e.target.closest('a[href]');

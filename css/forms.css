@@ -50,10 +50,12 @@
 .form > .btn-wide { margin-top: 16px; }
 .pick { display: flex; flex-wrap: wrap; gap: 10px; }
 /* Виды работ: ровная сетка, 3 плитки в ряд на телефоне, 5 на широком экране. Плитки одной высоты */
-.pick-kinds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-@media (min-width: 560px) { .pick-kinds { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+/* Плиток в ряду столько, сколько влезает целыми словами: узкий телефон две, обычный три, широкий экран пять (2026-10-31) */
+.pick-kinds { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
 .pick-kinds .chip { flex-direction: column; justify-content: center; gap: 6px; min-height: 84px; padding: 8px 4px; border-radius: var(--r); white-space: normal; text-align: center; font-size: 14px; line-height: 1.2; }
 .pick-kinds .chip svg { width: 24px; height: 24px; }
+/* Название в плитке переносится внутри неё и никогда не выходит за край (2026-10-31, «Стройматериалы») */
+.pick-kinds .chip span { min-width: 0; max-width: 100%; overflow-wrap: anywhere; hyphens: auto; }
 .seg { display: inline-grid; grid-template-columns: 1fr 1fr; gap: 4px; justify-self: start; padding: 4px; border: var(--edge); border-radius: var(--r-pill); background: var(--paper-2); }
 .seg .chip { min-width: 96px; justify-content: center; border: 2.5px solid transparent; background: transparent; box-shadow: none; }
 .seg .chip:active { transform: none; }

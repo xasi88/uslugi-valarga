@@ -27,7 +27,8 @@ const opts = (name, list, withIcons, value) => `<div class="pick${withIcons ? ' 
   `<button type="button" class="chip opt" data-v="${v}" aria-pressed="${v === value}">${withIcons ? icon(v) : ''}<span>${t}</span></button>`).join('')}</div>
   <input type="hidden" name="${name}" value="${esc(value ?? '')}">`;
 const kinds = (list = KINDS) => opts('kind', list.map(k => [k.id, k.name]), true);
-// Единица цены товара. «Просто цена»: за всё сразу, без единицы (2026-10-31)
+// «Просто цена»: за всё сразу, без единицы. Есть во всех разделах и нажата сразу (решение автора 2026-10-31)
+const plain = list => [['', 'Просто цена'], ...list.map(u => [u, u])];
 const GOODS_UNITS = ['за штуку', 'за кг', 'за литр', 'за десяток', 'за мешок', 'за ящик', 'за метр', 'за м²', 'за м³', 'за голову'];
 const LABEL = { masters: 'Услуга', requests: 'Работа', goods: 'Товар' };
 const field = (label, input, hint = '') => `<label class="field"><span class="lbl">${label}</span>${input}${hint ? `<small>${hint}</small>` : ''}<em class="err"></em></label>`;
@@ -65,7 +66,7 @@ export function requestForm() {
     ${group('Вид работы', kinds())}
     ${field('Что нужно сделать?', '<textarea name="text" maxlength="200" rows="3" placeholder="Например: разгрузить машину кирпича"></textarea>')}
     ${field('Оплата', moneyInput('budget', 'Пусто: договорная'))}
-    ${group('За что оплата?', opts('unit', [['за работу', 'за работу'], ['за день', 'за день'], ['за час', 'за час'], ['в месяц', 'в месяц']]))}
+    ${group('За что оплата?', opts('unit', plain(['за работу', 'за день', 'за час', 'в месяц']), false, ''))}
     ${group('Когда?', opts('when', [['Сегодня', 'Сегодня'], ['Завтра', 'Завтра'], ['На этой неделе', 'На этой неделе'], ['Не срочно', 'Не срочно']]))}
     ${field('Улица', '<input name="place" maxlength="40" placeholder="Например: ул. Школьная">', 'Можно не писать.')}
     ${group('Фото', shotsField('requests') + '<small>Можно не добавлять. С фото понятнее, что за работа.</small>')}
@@ -82,7 +83,7 @@ export function masterForm() {
     ${group('Фото работ', shotsField('masters') + '<small>До 6 фото. Первое фото встанет на витрину.</small>')}
     ${field('Что вы делаете?', '<textarea name="title" maxlength="90" rows="2" placeholder="Например: ворота, заборы, навесы"></textarea>')}
     ${group('Цена', `<div class="seg" data-name="from"><button type="button" class="chip opt" data-v="1" aria-pressed="true">От</button><button type="button" class="chip opt" data-v="0" aria-pressed="false">Точно</button></div><input type="hidden" name="from" value="1">${moneyInput('price', 'Пусто: договорная')}`)}
-    ${group('За что цена?', opts('unit', [['за работу', 'за работу'], ['за час', 'за час'], ['за метр', 'за метр'], ['за м²', 'за м²'], ['за рейс', 'за рейс'], ['за урок', 'за урок'], ['за кг', 'за кг'], ['за штуку', 'за штуку']]))}
+    ${group('За что цена?', opts('unit', plain(['за работу', 'за час', 'за метр', 'за м²', 'за рейс', 'за урок', 'за кг', 'за штуку']), false, ''))}
     ${field('Подробнее', '<input name="note" maxlength="60" placeholder="Например: выезд в тот же день">', 'Можно не писать.')}
     ${who()}
     <button class="btn btn-ink btn-wide">Отправить на проверку</button>
@@ -99,7 +100,7 @@ export function goodsForm() {
     ${group('Фото', shotsField('goods') + '<small>До 6 фото. Первое фото встанет на витрину. Для «Куплю» можно без фото.</small>')}
     ${field('Что продаёте или покупаете?', '<textarea name="title" maxlength="90" rows="2" placeholder="Например: мёд липовый, 3 литра"></textarea>')}
     ${field('Цена', moneyInput('price', 'Пусто: договорная'))}
-    ${group('За что цена?', opts('unit', [['', 'Просто цена'], ...GOODS_UNITS.map(u => [u, u])], false, ''))}
+    ${group('За что цена?', opts('unit', plain(GOODS_UNITS), false, ''))}
     ${field('Подробнее', '<input name="note" maxlength="100" placeholder="Например: привезу по селу">', 'Можно не писать.')}
     ${who()}
     <button class="btn btn-ink btn-wide">Отправить на проверку</button>

@@ -1,5 +1,5 @@
 // Доска: витрина услуг мастеров, работа от жителей, товары, страница мастера и товара, фильтр и поиск.
-import { icon, waIcon, phoneIcon, kindOf, kindsOf } from './icons.js';
+import { icon, waIcon, phoneIcon, kindOf, kindsOf, plainName } from './icons.js';
 import { esc, ago, wa, priceText, payText } from './util.js';
 import { $, photo, watch } from './ui.js';
 import * as store from './store.js';
@@ -49,7 +49,7 @@ function reqRow(r, i) {
 function match(x) {
   if (state.kind !== 'all' && x.kind !== state.kind) return false;
   if (!state.q) return true;
-  const text = lc([x.title, x.text, x.name, x.note, x.deal === 'buy' ? 'куплю' : '', kindOf(state.view, x.kind).name].join(' '));
+  const text = lc([x.title, x.text, x.name, x.note, x.deal === 'buy' ? 'куплю' : '', plainName(kindOf(state.view, x.kind))].join(' '));
   return lc(state.q).split(/\s+/).every(w => text.includes(w));
 }
 const items = () => store.board(state.view);

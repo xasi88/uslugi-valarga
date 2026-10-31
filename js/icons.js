@@ -84,7 +84,8 @@ export const GOODS = [
   { id: 'ovoshchi', name: 'Овощи и фрукты', tint: 2 },
   { id: 'skot', name: 'Скот и птица', tint: 1 },
   { id: 'korma', name: 'Корма и сено', tint: 1 },
-  { id: 'strojmat', name: 'Стройматериалы', tint: 4 },
+  // Мягкий перенос: в узкой плитке «Строй-материалы» в две строки, а не за край (2026-10-31)
+  { id: 'strojmat', name: 'Строй\u00adматериалы', tint: 4 },
   { id: 'zapchasti', name: 'Авто и запчасти', tint: 3 },
   { id: 'telefony', name: 'Телефоны и техника', tint: 3 },
   { id: 'mebel', name: 'Мебель и дом', tint: 4 },
@@ -95,3 +96,5 @@ export const GOODS = [
 // Виды для раздела: у товаров свои категории, у услуг и работы общие виды работ
 export const kindsOf = type => (type === 'goods' ? GOODS : KINDS);
 export const kindOf = (type, id) => { const l = kindsOf(type); return l.find(k => k.id === id) || l[l.length - 1]; };
+// Название без мягкого переноса: для поиска и статистики
+export const plainName = k => k.name.replace(/\u00ad/g, '');
