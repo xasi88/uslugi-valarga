@@ -2,7 +2,7 @@
 // Цифры показывает «Статистика проектов», раздел «Валарг». Имя группы меняешь здесь: меняешь и там.
 // В Метрику уходят только экраны, нажатия и виды работ. Имена, номера и тексты объявлений не уходят.
 // Роботу и компьютеру (localhost) счётчик не нужен: он молчит.
-import { kindById } from './icons.js';
+import { kindOf } from './icons.js';
 import { robot } from './store.js';
 
 const YM = 113926697;
@@ -26,7 +26,7 @@ export function send(params) {
 }
 
 // Экраны доски: отдельные просмотры. Самый первый Метрика считает сама
-const TITLES = { masters: 'Услуги', requests: 'Работа', master: 'Мастер', post: 'Разместить', mine: 'Мои' };
+const TITLES = { masters: 'Услуги', requests: 'Работа', goods: 'Товары', master: 'Мастер', good: 'Товар', post: 'Разместить', mine: 'Мои' };
 const where = () => TITLES[document.body.dataset.view] || 'Доска';
 let first = true;
 export function screen(view) {
@@ -34,10 +34,14 @@ export function screen(view) {
   if (on) window.ym(YM, 'hit', location.href, { title: `${TITLES[view] || view} · Валарг` });
 }
 
-// Связь и виды работ: нажатия на всей доске. Группа «Связь»: что нажали и на каком экране
+// Связь, виды работ и категории товаров: нажатия на всей доске. Группа «Связь»: что нажали и на каком экране
 document.addEventListener('click', e => {
   const k = e.target.closest('[data-kind]');
-  if (k) { send({ 'Вид работ': { [k.dataset.kind === 'all' ? 'Все' : kindById(k.dataset.kind).name]: where() } }); return; }
+  if (k) {
+    const goods = document.body.dataset.view === 'goods';
+    send({ [goods ? 'Категория товаров' : 'Вид работ']: { [k.dataset.kind === 'all' ? 'Все' : kindOf(goods ? 'goods' : 'masters', k.dataset.kind).name]: where() } });
+    return;
+  }
   const a = e.target.closest('a[href]');
   if (!a) return;
   const h = a.getAttribute('href');

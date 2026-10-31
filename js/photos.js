@@ -3,7 +3,7 @@
 import { icon } from './icons.js';
 import { CLOUDINARY } from './config.js';
 
-export const MAX = { masters: 6, requests: 3 };
+export const MAX = { masters: 6, requests: 3, goods: 6 };
 
 export async function shrink(file, max = 1000, q = .76) {
   const url = URL.createObjectURL(file);

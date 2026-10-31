@@ -1,6 +1,6 @@
 // Панель админа: проверка новых объявлений и снятие с доски.
 // Классы панели начинаются с a-. Данные через store.js, как у доски.
-import { icon, waIcon, phoneIcon, kindById } from './icons.js';
+import { icon, waIcon, phoneIcon, kindOf } from './icons.js';
 import { esc, ago, wa, phoneNice, photoUrl, priceText as cost, payText } from './util.js';
 import { CLOUDINARY } from './config.js';
 import { $, toast } from './ui.js';
@@ -13,13 +13,15 @@ const priceText = x => (x.type === 'requests' ? payText(x) : cost(x) + (x.price 
 
 function items(...statuses) {
   const tagT = type => x => ({ ...x, type });
-  return [...store.all('masters').map(tagT('masters')), ...store.all('requests').map(tagT('requests'))]
+  return ['masters', 'requests', 'goods'].flatMap(t => store.all(t).map(tagT(t)))
     .filter(x => statuses.includes(x.status)).sort((a, b) => b.at - a.at);
 }
 
 // Вкладка «Снятые»: почему объявления нет на доске и как его вернуть (решение автора 2026-10-30).
-// «Человек найден» не возвращается: работу снял сам автор
+// «Человек найден» и «Продано» не возвращаются: объявление снял сам автор
 const GONE = { off: 'Снято с доски', no: 'Отклонено', done: 'Человек найден' };
+const gone = x => (x.status === 'done' && x.type === 'goods' ? (x.deal === 'buy' ? 'Куплено' : 'Продано') : GONE[x.status]);
+const LABEL = { masters: 'Услуга', requests: 'Работа', goods: 'Товар' };
 const BACK = { off: 'Вернуть на доску', no: 'Выложить' };
 const DEL = '<button class="btn btn-line" data-a="del">Удалить</button>';
 function acts(x) {
@@ -29,20 +31,20 @@ function acts(x) {
 }
 
 function card(x) {
-  const k = kindById(x.kind);
+  const k = kindOf(x.type, x.kind);
   const isReq = x.type === 'requests';
   const facts = [
     priceText(x),
     isReq && x.when, isReq && x.place, !isReq && x.note,
   ].filter(Boolean).map(f => `<span>${esc(f)}</span>`).join('');
   return `<li class="a-card" data-type="${x.type}" data-id="${x.id}">
-    <p class="a-kind">${icon(k.id)}<b>${isReq ? 'Работа' : 'Услуга'}</b> · ${k.name} · ${ago(x.at)}${GONE[x.status] ? ' · ' + GONE[x.status] : ''}</p>
+    <p class="a-kind">${icon(k.id)}<b>${x.deal === 'buy' ? 'Куплю' : LABEL[x.type]}</b> · ${k.name} · ${ago(x.at)}${gone(x) ? ' · ' + gone(x) : ''}</p>
     <h3>${esc(isReq ? x.text : x.title)}</h3>
     ${x.photos?.length ? `<div class="a-shots">${x.photos.map(p => `<img src="${esc(photoUrl(p, 200, CLOUDINARY.cloud))}" alt="">`).join('')}</div>` : ''}
     <p class="a-facts">${facts}</p>
     <p class="a-who">${esc(x.name)} · ${x.wa === false
       ? `<a href="tel:+${x.phone}">${phoneIcon}${phoneNice(x.phone)}</a> · без WhatsApp`
-      : `<a href="${wa(x.phone, 'Здравствуйте! Пишу как админ доски «Услуги Валарга».')}" target="_blank" rel="noopener">${waIcon}${phoneNice(x.phone)}</a>`}</p>
+      : `<a href="${wa(x.phone, 'Здравствуйте! Пишу как админ доски «Валарг».')}" target="_blank" rel="noopener">${waIcon}${phoneNice(x.phone)}</a>`}</p>
     <div class="a-acts">${acts(x)}</div>
   </li>`;
 }

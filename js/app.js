@@ -1,6 +1,6 @@
-// Доска «Услуги Валарга»: переходы между экранами, меню, поиск, касания.
-// Экраны: услуги и работа (board.js), «Разместить» (post.js), «Мои» (mine.js).
-// Внутри кода «Работа» зовётся requests: так называется собрание в базе.
+// Доска «Валарг»: переходы между экранами, меню, поиск, касания.
+// Экраны: услуги, работа и товары (board.js), «Разместить» (post.js), «Мои» (mine.js).
+// Внутри кода «Работа» зовётся requests, «Товары» goods: так называются собрания в базе.
 import { icon, waIcon } from './icons.js';
 import { $, toast } from './ui.js';
 import * as board from './board.js';
@@ -18,28 +18,35 @@ const ROUTES = {
   '#/razmestit': ['post', 2, post.choiceScreen],
   '#/razmestit/rabota': ['post', 2, post.requestForm],
   '#/razmestit/usluga': ['post', 2, post.masterForm],
+  '#/razmestit/tovar': ['post', 2, post.goodsForm],
   '#/gotovo': ['post', 2, post.doneScreen],
-  '#/moi': ['mine', 3, mineScreen],
+  '#/tovary': ['goods', 3],
+  '#/moi': ['mine', 4, mineScreen],
 };
+// Страница плитки: мастер (#/m/<номер>) или товар (#/t/<номер>), пункт меню своего раздела
+const PAGES = { m: ['master', 0, 'masters'], t: ['good', 3, 'goods'] };
+const BOARDS = ['masters', 'requests', 'goods'];
 // Старые адреса до 2026-10-30: ссылки из WhatsApp ведут туда же
 ROUTES['#/zayavki'] = ROUTES['#/rabota'];
 ROUTES['#/razmestit/zayavka'] = ROUTES['#/razmestit/rabota'];
 const HEAD = {
   masters: ['Услуги <em>мастеров</em>', 'Смотрите, как мастер уже сделал. Цена на фото.'],
   requests: ['Работа <em>в Валарге</em>', 'Жители предлагают работу. Оплата указана сразу.'],
+  goods: ['Купить <em>и продать</em>', 'Жители продают и покупают. Цена на фото.'],
 };
 
 let boardY = 0;
 let canBack = false;
 function route() {
   const h = location.hash || '#/';
-  const m = h.match(/^#\/m\/([\w-]+)$/);
-  const [view, tabI, screen] = m ? ['master', 0, () => board.masterPage(m[1])] : ROUTES[h] || ROUTES['#/'];
+  const m = h.match(/^#\/([mt])\/([\w-]+)$/);
+  const page = m && PAGES[m[1]];
+  const [view, tabI, screen] = page ? [page[0], page[1], () => board.itemPage(page[2], m[2])] : ROUTES[h] || ROUTES['#/'];
   const prev = document.body.dataset.view;
-  const onBoard = view === 'masters' || view === 'requests';
-  if (prev === 'masters' && view === 'master') boardY = scrollY;
+  const onBoard = BOARDS.includes(view);
+  if (page && prev === page[2]) boardY = scrollY;
   // «Назад» возвращает на витрину, только если человек пришёл с неё. Иначе ссылка из WhatsApp вела бы прочь с сайта
-  if (view === 'master') canBack = prev === 'masters';
+  if (page) canBack = prev === page[2];
   document.body.dataset.view = view;
   stats.screen(view);
   document.querySelectorAll('.tab a').forEach((a, i) => a.classList.toggle('on', i === tabI));
@@ -51,11 +58,12 @@ function route() {
     [$('#board-title').innerHTML, $('#board-lead').textContent] = HEAD[view];
     board.renderKinds();
     board.renderList();
-    // С мастера назад на витрину: на то же место, где человек был
-    scrollTo({ top: prev === 'master' && view === 'masters' ? boardY : 0, behavior: 'auto' });
+    // Со страницы плитки назад на витрину: на то же место, где человек был
+    const back = Object.values(PAGES).some(([pv, , bv]) => prev === pv && view === bv);
+    scrollTo({ top: back ? boardY : 0, behavior: 'auto' });
   } else {
     post.showScreen(screen());
-    if (view === 'master') board.galleryCounter();
+    if (page) board.galleryCounter();
     scrollTo({ top: 0, behavior: 'auto' });
   }
 }
@@ -63,7 +71,7 @@ function route() {
 // Данные поменялись (новое объявление, админ выложил): перерисовать открытый экран
 store.onChange(() => {
   const view = document.body.dataset.view;
-  if (view === 'masters' || view === 'requests') { board.renderKinds(); board.renderList(); }
+  if (BOARDS.includes(view)) { board.renderKinds(); board.renderList(); }
   if (view === 'mine') post.showScreen(mineScreen());
 });
 
@@ -77,7 +85,7 @@ store.adminWait(n => {
 });
 
 function renderTab() {
-  const TAB = [['all', 'Услуги'], ['job', 'Работа'], ['add', 'Разместить'], ['mine', 'Мои']];
+  const TAB = [['all', 'Услуги'], ['job', 'Работа'], ['add', 'Разместить'], ['bag', 'Товары'], ['mine', 'Мои']];
   document.querySelectorAll('.tab a').forEach((a, i) => { a.innerHTML = '<i>' + icon(TAB[i][0]) + '</i>' + TAB[i][1]; });
 }
 
@@ -93,7 +101,10 @@ document.addEventListener('click', e => {
   if (!act) return;
   const { act: a, id, type } = act.dataset;
   if (a === 'back' && canBack) { e.preventDefault(); history.back(); }
-  if (a === 'found') { store.setStatus('requests', id, 'done'); toast('Объявление снято с доски. Хорошей работы!'); }
+  if (a === 'found') {
+    store.setStatus(type, id, 'done');
+    toast(type === 'goods' ? 'Объявление снято с доски.' : 'Объявление снято с доски. Хорошей работы!');
+  }
   if (a === 'del' && confirm('Удалить объявление? Вернуть его не получится.')) store.remove(type, id);
   if (a === 'search') {
     const s = $('#search');

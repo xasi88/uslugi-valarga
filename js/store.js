@@ -1,6 +1,6 @@
 // Хранилище объявлений: база Firestore (Firebase). Экраны знают только функции ниже.
 // Статусы: wait (на проверке), ok (на доске), no (отклонено), off (снято админом с доски), done (человек найден).
-// masters: услуги, requests: работа от жителей. Торга нет (решение автора 2026-10-30): старые предложения цены не читаются.
+// masters: услуги, requests: работа от жителей, goods: товары (продаю и куплю, с 2026-10-31). Торга нет (решение автора 2026-10-30): старые предложения цены не читаются.
 // Житель входит без аккаунта (анонимный вход, он его не видит): по этому входу «Мои»
 // находит свои объявления. Автор входит в панели через Google. Права проверяют правила базы.
 import {
@@ -14,10 +14,10 @@ import { nextTime, isBot, sent } from './util.js';
 export const robot = isBot(navigator.userAgent);
 
 const DAY = 864e5;
-const TYPES = ['masters', 'requests'];
+const TYPES = ['masters', 'requests', 'goods'];
 
 // Каждая подписка кладёт свои документы отдельно, экраны видят их вместе
-const parts = { masters: {}, requests: {} };
+const parts = { masters: {}, requests: {}, goods: {} };
 const subs = new Set();
 export const onChange = fn => subs.add(fn);
 const changed = () => subs.forEach(fn => fn());
@@ -78,7 +78,7 @@ if (!isPanel && !robot) {
     const show = v => { waitCount = v; onWait(v); };
     show(null);
     if (u) stopWait = TYPES.map(t => onSnapshot(query(collection(adminDb, t), where('status', '==', 'wait')),
-      snap => { n[t] = snap.size; if (TYPES.every(k => k in n)) show(n.masters + n.requests); },
+      snap => { n[t] = snap.size; if (TYPES.every(k => k in n)) show(TYPES.reduce((s, k) => s + n[k], 0)); },
       () => show(null)));
   });
 } else if (isPanel) {
@@ -105,7 +105,7 @@ export const all = list;
 export function mine() {
   if (!uid) return [];
   const tag = type => x => ({ ...x, type });
-  return [...list('masters').map(tag('masters')), ...list('requests').map(tag('requests'))]
+  return TYPES.flatMap(t => list(t).map(tag(t)))
     .filter(x => x.owner === uid).sort((a, b) => b.at - a.at);
 }
 

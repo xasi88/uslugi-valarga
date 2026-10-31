@@ -1,5 +1,5 @@
-// Экраны «Разместить» (услуга или работа) и «Отправлено».
-import { icon, waIcon, KINDS } from './icons.js';
+// Экраны «Разместить» (услуга, работа или товар) и «Отправлено».
+import { icon, waIcon, KINDS, GOODS } from './icons.js';
 import { esc, phone, phoneNice, price, clean, wa } from './util.js';
 import { ADMIN_PHONE } from './config.js';
 import { $, reduce, toast, watch, photo } from './ui.js';
@@ -10,7 +10,7 @@ import { send } from './stats.js';
 const back = href => `<a class="back" href="${href}" aria-label="Назад">${icon('arrow')}</a>`;
 
 // Связь с админом: WhatsApp автора с готовой первой фразой
-export const toAdmin = () => wa(ADMIN_PHONE, 'Здравствуйте! Пишу с доски «Услуги Валарга».');
+export const toAdmin = () => wa(ADMIN_PHONE, 'Здравствуйте! Пишу с доски «Валарг».');
 const adminLine = text => `<a class="to-admin" href="${toAdmin()}" target="_blank" rel="noopener">${waIcon}${text}</a>`;
 
 // Имя и номер запоминаются на телефоне: второй раз вводить не нужно
@@ -21,11 +21,15 @@ function keepContact(name, ph, hasWa) {
   try { localStorage.setItem('uv-contact', JSON.stringify({ name, phone: ph, wa: hasWa })); } catch { /* не страшно */ }
 }
 
-// Виды работ: ровная сетка одинаковых плиток, значок над названием. Остальной выбор: пилюли в строку
-const opts = (name, list, withIcons) => `<div class="pick${withIcons ? ' pick-kinds' : ''}" data-name="${name}">${list.map(([v, t]) =>
-  `<button type="button" class="chip opt" data-v="${v}" aria-pressed="false">${withIcons ? icon(v) : ''}<span>${t}</span></button>`).join('')}</div>
-  <input type="hidden" name="${name}">`;
-const kinds = () => opts('kind', KINDS.map(k => [k.id, k.name]), true);
+// Виды работ и категории товаров: ровная сетка одинаковых плиток, значок над названием. Остальной выбор: пилюли в строку.
+// value: что нажато сразу
+const opts = (name, list, withIcons, value) => `<div class="pick${withIcons ? ' pick-kinds' : ''}" data-name="${name}">${list.map(([v, t]) =>
+  `<button type="button" class="chip opt" data-v="${v}" aria-pressed="${v === value}">${withIcons ? icon(v) : ''}<span>${t}</span></button>`).join('')}</div>
+  <input type="hidden" name="${name}" value="${esc(value ?? '')}">`;
+const kinds = (list = KINDS) => opts('kind', list.map(k => [k.id, k.name]), true);
+// Единица цены товара. «Просто цена»: за всё сразу, без единицы (2026-10-31)
+const GOODS_UNITS = ['за штуку', 'за кг', 'за литр', 'за десяток', 'за мешок', 'за ящик', 'за метр', 'за м²', 'за м³', 'за голову'];
+const LABEL = { masters: 'Услуга', requests: 'Работа', goods: 'Товар' };
 const field = (label, input, hint = '') => `<label class="field"><span class="lbl">${label}</span>${input}${hint ? `<small>${hint}</small>` : ''}<em class="err"></em></label>`;
 const group = (label, inner) => `<fieldset class="field"><legend class="lbl">${label}</legend>${inner}<em class="err"></em></fieldset>`;
 const moneyInput = (name, ph) => `<span class="money"><input name="${name}" inputmode="numeric" maxlength="9" placeholder="${ph}" autocomplete="off"><i>₽</i></span>`;
@@ -49,6 +53,7 @@ export function choiceScreen() {
     <p class="scr-lead">Бесплатно. Админ группы «Валарг» проверит объявление и выложит его на доску.</p>
     ${row('#/razmestit/usluga', 'camera', 2, 'Предлагаю услугу', 'Покажите фото работ и цену. Вам позвонят или напишут.')}
     ${row('#/razmestit/rabota', 'job', 3, 'Предлагаю работу', 'Опишите работу и оплату. Вам позвонят или напишут.')}
+    ${row('#/razmestit/tovar', 'bag', 4, 'Продаю или куплю', 'Покажите товар и цену. Вам позвонят или напишут.')}
     ${adminLine('Вопрос по доске? Написать админу')}
   </div>`;
 }
@@ -77,8 +82,25 @@ export function masterForm() {
     ${group('Фото работ', shotsField('masters') + '<small>До 6 фото. Первое фото встанет на витрину.</small>')}
     ${field('Что вы делаете?', '<textarea name="title" maxlength="90" rows="2" placeholder="Например: ворота, заборы, навесы"></textarea>')}
     ${group('Цена', `<div class="seg" data-name="from"><button type="button" class="chip opt" data-v="1" aria-pressed="true">От</button><button type="button" class="chip opt" data-v="0" aria-pressed="false">Точно</button></div><input type="hidden" name="from" value="1">${moneyInput('price', 'Пусто: договорная')}`)}
-    ${group('За что цена?', opts('unit', [['за работу', 'за работу'], ['за час', 'за час'], ['за метр', 'за метр'], ['за м²', 'за м²'], ['за рейс', 'за рейс'], ['за урок', 'за урок']]))}
+    ${group('За что цена?', opts('unit', [['за работу', 'за работу'], ['за час', 'за час'], ['за метр', 'за метр'], ['за м²', 'за м²'], ['за рейс', 'за рейс'], ['за урок', 'за урок'], ['за кг', 'за кг'], ['за штуку', 'за штуку']]))}
     ${field('Подробнее', '<input name="note" maxlength="60" placeholder="Например: выезд в тот же день">', 'Можно не писать.')}
+    ${who()}
+    <button class="btn btn-ink btn-wide">Отправить на проверку</button>
+  </form>`;
+}
+
+// Товар: продаю или куплю, категория, фото, цена за единицу или просто цена
+export function goodsForm() {
+  return `<form class="scr form" data-type="goods" novalidate>
+    ${back('#/razmestit')}
+    <h1>Продаю или куплю</h1>
+    ${group('Что вы хотите?', `<div class="seg" data-name="deal"><button type="button" class="chip opt" data-v="sell" aria-pressed="true">Продаю</button><button type="button" class="chip opt" data-v="buy" aria-pressed="false">Куплю</button></div><input type="hidden" name="deal" value="sell">`)}
+    ${group('Категория', kinds(GOODS))}
+    ${group('Фото', shotsField('goods') + '<small>До 6 фото. Первое фото встанет на витрину. Для «Куплю» можно без фото.</small>')}
+    ${field('Что продаёте или покупаете?', '<textarea name="title" maxlength="90" rows="2" placeholder="Например: мёд липовый, 3 литра"></textarea>')}
+    ${field('Цена', moneyInput('price', 'Пусто: договорная'))}
+    ${group('За что цена?', opts('unit', [['', 'Просто цена'], ...GOODS_UNITS.map(u => [u, u])], false, ''))}
+    ${field('Подробнее', '<input name="note" maxlength="100" placeholder="Например: привезу по селу">', 'Можно не писать.')}
     ${who()}
     <button class="btn btn-ink btn-wide">Отправить на проверку</button>
   </form>`;
@@ -130,10 +152,12 @@ const must = min => s => (clean(s, 200).length >= min ? clean(s, 200) : null);
 const any = max => s => clean(s, max);
 
 export async function submit(form) {
-  const isReq = form.dataset.type === 'requests';
-  const need = isReq
-    ? [['kind', must(1), 'Выберите вид работы.'], ['text', must(5), 'Напишите, что нужно сделать.'], ['budget', price], ['unit', any(20)], ['when', any(20)], ['place', any(40)]]
-    : [['kind', must(1), 'Выберите вид работ.'], ['title', must(5), 'Напишите, что вы делаете.'], ['from', s => s === '1'], ['price', price], ['unit', any(20)], ['note', any(60)]];
+  const type = form.dataset.type;
+  const need = {
+    requests: [['kind', must(1), 'Выберите вид работы.'], ['text', must(5), 'Напишите, что нужно сделать.'], ['budget', price], ['unit', any(20)], ['when', any(20)], ['place', any(40)]],
+    masters: [['kind', must(1), 'Выберите вид работ.'], ['title', must(5), 'Напишите, что вы делаете.'], ['from', s => s === '1'], ['price', price], ['unit', any(20)], ['note', any(60)]],
+    goods: [['deal', s => (s === 'buy' ? 'buy' : 'sell')], ['kind', must(1), 'Выберите категорию.'], ['title', must(3), 'Напишите, что продаёте или покупаете.'], ['price', price], ['unit', any(20)], ['note', any(100)]],
+  }[type];
   const data = read(form, need);
   if (!data) return;
   const btn = form.querySelector('.form > .btn-ink');
@@ -147,15 +171,15 @@ export async function submit(form) {
       photos.push(await upload(list[i]));
     }
     btn.textContent = 'Отправляем';
-    await store.add(form.dataset.type, { ...data, photos }, () => {
+    await store.add(type, { ...data, photos }, () => {
       btn.textContent = 'Отправляем. Не закрывайте страницу';
       toast('Связь слабая. Объявление уйдёт, когда связь станет лучше.');
     });
     keepContact(data.name, data.phone, data.wa);
-    send({ 'Объявления': { 'Отправили': isReq ? 'Работа' : 'Услуга' } });
+    send({ 'Объявления': { 'Отправили': LABEL[type] } });
     location.hash = '#/gotovo';
   } catch (e) {
-    if (e.message.startsWith('Одно объявление в сутки')) send({ 'Объявления': { 'Защита остановила': isReq ? 'Работа' : 'Услуга' } });
+    if (e.message.startsWith('Одно объявление в сутки')) send({ 'Объявления': { 'Защита остановила': LABEL[type] } });
     toast(e.message);
     btn.disabled = false;
     btn.textContent = 'Отправить на проверку';

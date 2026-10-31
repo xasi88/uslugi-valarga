@@ -1,5 +1,5 @@
-// Экран «Мои»: объявления с этого телефона, их статус, «Нашёл человека» у работы.
-import { icon, kindById } from './icons.js';
+// Экран «Мои»: объявления с этого телефона, их статус, «Нашёл человека» у работы, «Продано» у товара.
+import { icon, kindOf } from './icons.js';
 import { esc, ago, priceText, payText } from './util.js';
 import { photo } from './ui.js';
 import * as store from './store.js';
@@ -12,17 +12,24 @@ const STATE = {
   done: ['state-done', 'Человек найден'],
 };
 
+// Товар снят хозяином: продан или куплен
+const DONE = { sell: 'Продано', buy: 'Куплено' };
+const LABEL = { masters: 'Услуга', requests: 'Работа', goods: 'Товар' };
+
 function item(x) {
-  const k = kindById(x.kind);
+  const k = kindOf(x.type, x.kind);
   const isReq = x.type === 'requests';
-  const [cls, label] = STATE[x.status] || STATE.wait;
+  const isGood = x.type === 'goods';
+  const deal = x.deal === 'buy' ? 'buy' : 'sell';
+  let [cls, label] = STATE[x.status] || STATE.wait;
+  if (isGood && x.status === 'done') label = DONE[deal];
   const acts = [];
-  if (isReq && x.status === 'ok') acts.push(`<button class="btn btn-ink" data-act="found" data-id="${x.id}">Нашёл человека</button>`);
+  if ((isReq || isGood) && x.status === 'ok') acts.push(`<button class="btn btn-ink" data-act="found" data-type="${x.type}" data-id="${x.id}">${isGood ? DONE[deal] : 'Нашёл человека'}</button>`);
   acts.push(`<button class="btn btn-line" data-act="del" data-type="${x.type}" data-id="${x.id}">Удалить</button>`);
   const cost = isReq ? payText(x) : priceText(x, true);
   return `<li class="mine-item">
     ${photo(x.photos?.[0], k, '', 160)}</div>
-    <p class="mine-kind">${isReq ? 'Работа' : 'Услуга'} · ${k.name} · ${ago(x.at)}</p>
+    <p class="mine-kind">${isGood && deal === 'buy' ? 'Куплю' : LABEL[x.type]} · ${k.name} · ${ago(x.at)}</p>
     <h3>${esc(isReq ? x.text : x.title)} <span class="num">· ${cost}</span></h3>
     <p><span class="state ${cls}">${label}</span></p>
     <div class="mine-acts">${acts.join('')}</div>
