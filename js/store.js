@@ -41,8 +41,10 @@ function merged(type) {
 const list = type => merged(type).sort((a, b) => b.at - a.at);
 
 // Защита от спама: одно объявление в сутки с телефона и с номера (решение автора 2026-10-30).
+// Товары считаются отдельно от услуг и работы (решение автора 2026-10-31): у них свои отметки gu_ и gp_.
 // Админ включает и выключает её в панели. Настройки в базе ещё нет: защита включена
 let guard = true;
+const group = type => (type === 'goods' ? 'g' : '');
 export const guardOn = () => guard;
 onSnapshot(doc(db, 'settings', 'board'), s => { guard = s.data()?.spam !== false; changed(); }, () => {});
 
@@ -109,18 +111,20 @@ export function mine() {
     .filter(x => x.owner === uid).sort((a, b) => b.at - a.at);
 }
 
-// Последнее объявление с этого телефона: отметка в памяти телефона или свои объявления из базы
-function lastPost() {
+// Последнее объявление с этого телефона в той же группе (товары или услуги с работой):
+// отметка в памяти телефона или свои объявления из базы
+const lastKey = type => (group(type) ? 'uv-last-goods' : 'uv-last');
+function lastPost(type) {
   let t = 0;
-  try { t = +localStorage.getItem('uv-last') || 0; } catch { /* памяти нет */ }
-  return Math.max(t, ...mine().map(x => x.at));
+  try { t = +localStorage.getItem(lastKey(type)) || 0; } catch { /* памяти нет */ }
+  return Math.max(t, ...mine().filter(x => group(x.type) === group(type)).map(x => x.at));
 }
 
 // Одно объявление в сутки. Форма спрашивает до загрузки фото, чтобы не грузить их зря.
 // Это подсказка телефону, а не замок: замок в правилах базы (limits)
-export function checkLimit() {
+export function checkLimit(type) {
   if (!guard) return;
-  const next = lastPost() + DAY;
+  const next = lastPost(type) + DAY;
   if (next > Date.now()) throw new Error(`Одно объявление в сутки. Следующее можно отправить ${nextTime(next)}.`);
 }
 
@@ -136,23 +140,25 @@ async function user() {
 
 // Новое объявление ждёт проверки админа. onSlow: связь слабая, форма говорит об этом и ждёт ответа базы
 export async function add(type, data, onSlow = () => {}) {
-  checkLimit();
+  checkLimit(type);
   let item;
   try {
     const u = await user();
     const ref = doc(collection(db, type));
     item = { ...data, at: Date.now(), status: 'wait', owner: u.uid };
     // В той же записи отметка времени для телефона и для номера: по ним база считает сутки.
-    // t и id: где лежит объявление. Без объявления на этот номер база не ставит отметку номера
+    // t и id: где лежит объявление. Без объявления на этот номер база не ставит отметку номера.
+    // У товаров отметки свои (g): товар не мешает услуге или работе в тот же день
     const b = writeBatch(db);
     const stamp = { at: serverTimestamp(), t: type, id: ref.id };
-    b.set(doc(db, 'limits', 'u_' + u.uid), stamp);
-    b.set(doc(db, 'limits', 'p_' + data.phone), stamp);
+    const g = group(type);
+    b.set(doc(db, 'limits', g + 'u_' + u.uid), stamp);
+    b.set(doc(db, 'limits', g + 'p_' + data.phone), stamp);
     b.set(ref, item);
     await sent(b.commit(), onSlow);
     item.id = ref.id;
   } catch (e) { throw new Error(why(e)); }
-  try { localStorage.setItem('uv-last', String(item.at)); } catch { /* не страшно */ }
+  try { localStorage.setItem(lastKey(type), String(item.at)); } catch { /* не страшно */ }
   return item;
 }
 

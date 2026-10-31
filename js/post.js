@@ -164,7 +164,7 @@ export async function submit(form) {
   const list = form._photos || [];
   btn.disabled = true;
   try {
-    store.checkLimit();
+    store.checkLimit(type);
     const photos = [];
     for (let i = 0; i < list.length; i++) {
       btn.textContent = `Загружаем фото ${i + 1} из ${list.length}`;

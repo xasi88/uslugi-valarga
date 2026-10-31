@@ -53,7 +53,7 @@ function card(x) {
 function guardBox() {
   const on = store.guardOn();
   $('#a-guard').innerHTML = `<p><b>Защита от спама</b><span>${on
-    ? 'Одно объявление в сутки с одного телефона и одного номера.'
+    ? 'Одно объявление в сутки с одного телефона и одного номера. Товары считаются отдельно.'
     : 'Выключена: люди отправляют объявления без ограничений.'}</span></p>
     <div><button class="chip" data-guard="1" aria-pressed="${on}">Включена</button><button class="chip" data-guard="0" aria-pressed="${!on}">Выключена</button></div>`;
 }
