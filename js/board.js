@@ -1,7 +1,7 @@
 // Доска: витрина услуг мастеров, работа от жителей, товары, страница мастера и товара, фильтр и поиск.
 import { icon, waIcon, phoneIcon, kindOf, kindsOf, plainName } from './icons.js';
 import { esc, ago, wa, priceText, payText } from './util.js';
-import { $, photo, watch } from './ui.js';
+import { $, photo, SIZES, watch } from './ui.js';
 import * as store from './store.js';
 
 export const state = { view: 'masters', kind: 'all', q: '' };
@@ -18,7 +18,7 @@ function tile(m, i) {
   // Ценник: цена шрифтом Unbounded, единица мельче, чтобы ценник влез в узкую плитку
   const base = priceText(m), unit = priceText(m, true).slice(base.length);
   return `<a class="tile fade-in" style="${delay(i)}" href="${PAGE[state.view]}${m.id}">
-    ${photo(m.photos?.[0], k, m.title)}${buyTag(m)}<span class="price num">${esc(base)}${unit ? `<small>${esc(unit)}</small>` : ''}</span>${n > 1 ? `<span class="count">${n} фото</span>` : ''}</div>
+    ${photo(m.photos?.[0], k, m.title, i ? SIZES.tile : SIZES.hero)}${buyTag(m)}<span class="price num">${esc(base)}${unit ? `<small>${esc(unit)}</small>` : ''}</span>${n > 1 ? `<span class="count">${n} фото</span>` : ''}</div>
     <p class="tile-title">${esc(m.title)}</p>
     <p class="tile-who">${icon('ok')}${esc(m.name)} · ${lc(k.name)}</p>
   </a>`;
@@ -35,7 +35,7 @@ function reach(x, hello) {
 function reqRow(r, i) {
   const k = kindOf('requests', r.kind);
   const hello = `Здравствуйте! Видел вашу работу на доске «Валарг»: ${r.text}.`;
-  const shots = r.photos?.length ? `<div class="req-shots">${r.photos.map(p => photo(p, k, '', 160) + '</div>').join('')}</div>` : '';
+  const shots = r.photos?.length ? `<div class="req-shots">${r.photos.map(p => photo(p, k, '', SIZES.thumb) + '</div>').join('')}</div>` : '';
   return `<li class="req fade-in" style="${delay(i)}">
     <div class="req-top"><p class="req-kind">${icon(k.id)}${k.name} · ${ago(r.at)}</p><b class="req-budget num">${esc(payText(r))}</b></div>
     <h3>${esc(r.text)}</h3>
@@ -108,7 +108,7 @@ export function itemPage(type, id) {
       : `Здравствуйте! Пишу с доски «Валарг». Интересует ваш товар: ${m.title}.`;
   return `<article class="master">
     <div class="gal">
-      <div class="gal-track" id="gal">${shots.map(p => photo(p, k, m.title, 1000) + '</div>').join('')}</div>
+      <div class="gal-track" id="gal">${shots.map(p => photo(p, k, m.title, SIZES.gal) + '</div>').join('')}</div>
       <a class="round" href="${home[0]}" data-act="back" aria-label="Назад">${icon('arrow')}</a>
       ${shots.length > 1 ? `<span class="count" id="gal-n">1 / ${shots.length}</span>` : ''}
     </div>

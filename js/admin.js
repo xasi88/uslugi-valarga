@@ -40,7 +40,7 @@ function card(x) {
   return `<li class="a-card" data-type="${x.type}" data-id="${x.id}">
     <p class="a-kind">${icon(k.id)}<b>${x.deal === 'buy' ? 'Куплю' : LABEL[x.type]}</b> · ${k.name} · ${ago(x.at)}${gone(x) ? ' · ' + gone(x) : ''}</p>
     <h3>${esc(isReq ? x.text : x.title)}</h3>
-    ${x.photos?.length ? `<div class="a-shots">${x.photos.map(p => `<img src="${esc(photoUrl(p, 200, CLOUDINARY.cloud))}" alt="">`).join('')}</div>` : ''}
+    ${x.photos?.length ? `<div class="a-shots">${x.photos.map(p => `<img src="${esc(photoUrl(p, 320, CLOUDINARY.cloud))}" alt="">`).join('')}</div>` : ''}
     <p class="a-facts">${facts}</p>
     <p class="a-who">${esc(x.name)} · ${x.wa === false
       ? `<a href="tel:+${x.phone}">${phoneIcon}${phoneNice(x.phone)}</a> · без WhatsApp`

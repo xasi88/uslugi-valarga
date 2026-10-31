@@ -64,7 +64,7 @@
 /* Фото работ: 4 на 5 с контуром, крестик убирает фото */
 .shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
 .shot { position: relative; aspect-ratio: 4 / 5; border: var(--edge-thin); border-radius: 14px; overflow: hidden; background: var(--mint); }
-.shot img { width: 100%; height: 100%; object-fit: cover; }
+.shot img { width: 100%; height: 100%; object-fit: contain; }
 .shot button { position: absolute; top: 4px; right: 4px; width: 32px; height: 32px; padding: 0; border: 2px solid var(--paper); border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: var(--paper); cursor: pointer; }
 .shot button::after { content: ""; position: absolute; inset: -6px; }
 .shot button svg { width: 16px; height: 16px; stroke-width: 2.6; }

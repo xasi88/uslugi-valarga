@@ -1,7 +1,7 @@
 // Экран «Мои»: объявления с этого телефона, их статус, «Нашёл человека» у работы, «Продано» у товара.
 import { icon, kindOf } from './icons.js';
 import { esc, ago, priceText, payText } from './util.js';
-import { photo } from './ui.js';
+import { photo, SIZES } from './ui.js';
 import * as store from './store.js';
 
 const STATE = {
@@ -28,7 +28,7 @@ function item(x) {
   acts.push(`<button class="btn btn-line" data-act="del" data-type="${x.type}" data-id="${x.id}">Удалить</button>`);
   const cost = isReq ? payText(x) : priceText(x, true);
   return `<li class="mine-item">
-    ${photo(x.photos?.[0], k, '', 160)}</div>
+    ${photo(x.photos?.[0], k, '', SIZES.thumb)}</div>
     <p class="mine-kind">${isGood && deal === 'buy' ? 'Куплю' : LABEL[x.type]} · ${k.name} · ${ago(x.at)}</p>
     <h3>${esc(isReq ? x.text : x.title)} <span class="num">· ${cost}</span></h3>
     <p><span class="state ${cls}">${label}</span></p>

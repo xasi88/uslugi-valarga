@@ -70,10 +70,21 @@ export function priceText(m, short) {
 // Оплата работы: «3 000 ₽ за день». Без суммы: «договорная»
 export const payText = r => (r.budget ? money(r.budget) + (r.unit ? ' ' + r.unit : '') : 'договорная');
 
-// Адрес фото нужного размера, обрезка 4 на 5. Фото из пробных данных (data:) отдаётся как есть
+// Адрес фото шириной до w точек: фото целиком, без обрезки, меньше оригинала не растягивается.
+// Фото из пробных данных (data:) отдаётся как есть
+const own = id => !/^(data:|https?:)/.test(id);
+const CDN = cloud => `https://res.cloudinary.com/${cloud}/image/upload`;
 export function photoUrl(id, w, cloud) {
-  if (/^(data:|https?:)/.test(id)) return id;
-  return `https://res.cloudinary.com/${cloud}/image/upload/c_fill,w_${w},h_${Math.round(w * 1.25)},f_auto,q_auto/${id}`;
+  return own(id) ? `${CDN(cloud)}/c_limit,w_${w},f_auto,q_auto/${id}` : id;
+}
+
+// Набор ширин для srcset: браузер сам берёт копию под место на экране и плотность экрана
+export const WIDTHS = [320, 480, 640, 960, 1280, 1600];
+export const photoSet = (id, cloud) => (own(id) ? WIDTHS.map(w => `${photoUrl(id, w, cloud)} ${w}w`).join(', ') : '');
+
+// Крошечная размытая копия того же фото: заполняет пустые края плитки
+export function photoBlur(id, cloud) {
+  return own(id) ? `${CDN(cloud)}/c_fill,w_60,h_75/e_blur:800/f_auto,q_auto:low/${id}` : id;
 }
 
 export const wa = (d, text) => `https://wa.me/${d}?text=${encodeURIComponent(text)}`;

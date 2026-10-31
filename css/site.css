@@ -88,7 +88,7 @@ body { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 .tile .ph img { transition: opacity .4s var(--ease), transform .6s var(--ease); }
 @media (hover: hover) {
   .tile:hover { rotate: 0deg; translate: -2px -3px; box-shadow: var(--drop-lg); }
-  .tile:hover .ph img { transform: scale(1.05); }
+  .tile:hover .ph img:not(.ph-bg) { transform: scale(1.05); }
 }
 /* Ценник: коралловая наклейка в углу фото */
 .price { position: absolute; z-index: 1; left: 8px; bottom: 10px; max-width: calc(100% - 14px); padding: 5px 9px; border: var(--edge); border-radius: var(--r-sm); background: var(--coral); color: var(--ink); box-shadow: var(--drop-sm); rotate: -4deg; font: 800 13px/1.15 var(--font-display); white-space: normal; }
@@ -117,7 +117,12 @@ body { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 .req-meta span { display: inline-flex; align-items: center; gap: 5px; }
 .req-meta svg { width: 16px; height: 16px; }
 .req-shots { display: flex; gap: 8px; }
-.req-shots .ph { width: 72px; height: 72px; border: var(--edge-thin); border-radius: var(--r-sm); }
+.req-shots .ph { width: 72px; height: 72px; border: var(--edge-thin); border-radius: var(--r-sm); cursor: zoom-in; }
+.gal-track .ph { cursor: zoom-in; }
+/* Фото на весь экран: касание закрывает */
+.viewer { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 16px; background: var(--ink); cursor: zoom-out; }
+.viewer img { max-width: 100%; max-height: calc(100dvh - 32px); object-fit: contain; }
+.viewer .round { position: absolute; top: calc(12px + env(safe-area-inset-top)); right: 12px; }
 /* Связь: WhatsApp и «Позвонить» поровну. Нет WhatsApp: одна кнопка на всю ширину */
 .req-acts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 4px; }
 /* Две кнопки связи рядом, на очень узком экране одна под другой */

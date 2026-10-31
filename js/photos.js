@@ -1,11 +1,11 @@
-// Фото с телефона: уменьшить до 1000 точек по длинной стороне и сжать в JPEG,
-// потом отправить в Cloudinary. Фото весит около 120 КБ вместо 5 МБ.
+// Фото с телефона: уменьшить до 1600 точек по длинной стороне (больше настройка Cloudinary
+// не примет) и сжать в JPEG 90%, потом отправить в Cloudinary. Фото весит около 400 КБ вместо 5 МБ.
 import { icon } from './icons.js';
 import { CLOUDINARY } from './config.js';
 
 export const MAX = { masters: 6, requests: 3, goods: 6 };
 
-export async function shrink(file, max = 1000, q = .76) {
+export async function shrink(file, max = 1600, q = .9) {
   const url = URL.createObjectURL(file);
   try {
     const img = await new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = bad; i.src = url; });
@@ -13,7 +13,9 @@ export async function shrink(file, max = 1000, q = .76) {
     const c = document.createElement('canvas');
     c.width = Math.round(img.naturalWidth * k);
     c.height = Math.round(img.naturalHeight * k);
-    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    const g = c.getContext('2d');
+    g.imageSmoothingQuality = 'high'; // без этого мелкие линии при уменьшении рвутся
+    g.drawImage(img, 0, 0, c.width, c.height);
     return c.toDataURL('image/jpeg', q);
   } finally {
     URL.revokeObjectURL(url);

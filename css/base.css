@@ -134,7 +134,8 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor;
 .ph { position: relative; overflow: hidden; background: var(--tone, var(--tone-1)); }
 .ph::before { content: ""; position: absolute; inset: 0; background: radial-gradient(rgba(11, 13, 23, .09) 1.4px, transparent 1.4px) 0 0 / 14px 14px; }
 .ph > svg.i { position: absolute; left: 50%; top: 50%; width: 36px; height: 36px; margin: -18px 0 0 -18px; color: var(--ink); opacity: .5; stroke-width: 1.8; }
-.ph img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .4s var(--ease); }
+.ph img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity .4s var(--ease); }
+.ph img.ph-bg { object-fit: cover; transform: scale(1.15); }
 .ph img.ok { opacity: 1; }
 
 /* Знак «проверено админом»: мятная метка */

@@ -2,7 +2,7 @@
 // Экраны: услуги, работа и товары (board.js), «Разместить» (post.js), «Мои» (mine.js).
 // Внутри кода «Работа» зовётся requests, «Товары» goods: так называются собрания в базе.
 import { icon, waIcon } from './icons.js';
-import { $, toast } from './ui.js';
+import { $, toast, viewPhoto } from './ui.js';
 import * as board from './board.js';
 import * as post from './post.js';
 import { addShots, removeShot } from './photos.js';
@@ -97,6 +97,8 @@ document.addEventListener('click', e => {
   if (k) { board.pickKind(k.dataset.kind); return; }
   const shot = t.closest('[data-shot]');
   if (shot) { removeShot(shot.closest('form'), +shot.dataset.shot); return; }
+  const big = t.closest('.req-shots [data-photo], .gal-track [data-photo]');
+  if (big) { viewPhoto(big.dataset.photo); return; }
   const act = t.closest('[data-act]');
   if (!act) return;
   const { act: a, id, type } = act.dataset;
