@@ -70,7 +70,7 @@ export async function toggle(btn) {
 export function tell(title, body, url = '/#/moi') {
   if (!prefs().notify) return;
   sound.notify();
-  if (!document.hidden) return toast(`${title}: ${body}`);
+  if (!document.hidden) return toast(`${title}: ${body}`, 7000);
   if (Notification.permission !== 'granted') return;
   navigator.serviceWorker?.ready.then(r => r.showNotification(title, { body, icon: '/img/icon-192.png', tag: url, data: { url } }));
 }

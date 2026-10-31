@@ -7,12 +7,12 @@ export const $ = s => document.querySelector(s);
 export const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 let toastTimer;
-export function toast(text) {
+export function toast(text, ms = 3200) {
   const t = $('#toast');
   t.textContent = text;
   t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+  toastTimer = setTimeout(() => t.classList.remove('show'), ms);
 }
 
 // Сколько места фото занимает на экране (атрибут sizes): по нему браузер выбирает ширину копии

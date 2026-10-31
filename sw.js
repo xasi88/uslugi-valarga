@@ -40,13 +40,14 @@ self.addEventListener('fetch', e => {
     .then(hit => hit || Response.error())));
 });
 
-// Уведомление от почтальона (worker, через FCM). Доска на экране скажет сама: подсказкой и звуком.
-// В панели админа таких подсказок нет: там уведомление показывается
+// Уведомление от почтальона (worker, через FCM). Молчит, только если человек сейчас в окне доски:
+// доска скажет сама. «Видимое» окно не годится: окно за другими окнами Chrome тоже считает видимым,
+// и пробой 2026-10-31 оба уведомления пропали. В панели админа подсказок нет: там уведомление есть всегда
 self.addEventListener('push', e => {
   let d;
   try { d = e.data.json().data || {}; } catch { return; }
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-    if (list.some(c => c.visibilityState === 'visible' && !new URL(c.url).pathname.startsWith('/admin'))) return;
+    if (list.some(c => c.focused && !new URL(c.url).pathname.startsWith('/admin'))) return;
     return self.registration.showNotification(d.title || 'Валарг', {
       body: d.body || '', icon: '/img/icon-192.png', tag: d.url || '/', data: { url: d.url || '/' },
     });
