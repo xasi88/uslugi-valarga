@@ -9,6 +9,8 @@ import { addShots, removeShot } from './photos.js';
 import { mineScreen } from './mine.js';
 import * as store from './store.js';
 import * as stats from './stats.js';
+import * as settings from './settings.js';
+import * as sound from './sound.js';
 import './install.js';
 
 // Адрес → экран и пункт меню
@@ -22,6 +24,7 @@ const ROUTES = {
   '#/gotovo': ['post', 2, post.doneScreen],
   '#/tovary': ['goods', 3],
   '#/moi': ['mine', 4, mineScreen],
+  '#/nastroyki': ['settings', -1, settings.settingsScreen],
 };
 // Страница плитки: мастер (#/m/<номер>) или товар (#/t/<номер>), пункт меню своего раздела
 const PAGES = { m: ['master', 0, 'masters'], t: ['good', 3, 'goods'] };
@@ -37,6 +40,7 @@ const HEAD = {
 
 let boardY = 0;
 let canBack = false;
+let booted = false;
 function route() {
   const h = location.hash || '#/';
   const m = h.match(/^#\/([mt])\/([\w-]+)$/);
@@ -47,6 +51,8 @@ function route() {
   if (page && prev === page[2]) boardY = scrollY;
   // «Назад» возвращает на витрину, только если человек пришёл с неё. Иначе ссылка из WhatsApp вела бы прочь с сайта
   if (page) canBack = prev === page[2];
+  if (view === 'settings') canBack = booted;
+  booted = true;
   document.body.dataset.view = view;
   stats.screen(view);
   document.querySelectorAll('.tab a').forEach((a, i) => a.classList.toggle('on', i === tabI));
@@ -73,15 +79,20 @@ store.onChange(() => {
   const view = document.body.dataset.view;
   if (BOARDS.includes(view)) { board.renderKinds(); board.renderList(); }
   if (view === 'mine') post.showScreen(mineScreen());
+  settings.checkMine();
 });
 
-// Значок «Админ» виден только на телефоне, где админ вошёл в панель. Число: ждут проверки
+// Число на шестерёнке: только на телефоне, где админ вошёл в панель, сколько ждут проверки.
+// Стало больше: новое объявление, админу уведомление
+let lastWait = null;
 store.adminWait(n => {
-  const a = $('#adm');
-  a.hidden = n === null;
-  a.querySelector('b').textContent = n || '';
-  a.querySelector('b').hidden = !n;
-  a.setAttribute('aria-label', n ? `Панель админа, на проверке: ${n}` : 'Панель админа');
+  const b = $('#gear b');
+  b.textContent = n || '';
+  b.hidden = !n;
+  $('#gear').setAttribute('aria-label', n ? `Настройки, на проверке: ${n}` : 'Настройки');
+  if (lastWait !== null && n > lastWait) settings.tell('Новое объявление на проверке', `На проверке: ${n}`, '/admin/');
+  lastWait = n;
+  settings.adminChanged(n);
 });
 
 function renderTab() {
@@ -91,6 +102,9 @@ function renderTab() {
 
 document.addEventListener('click', e => {
   const t = e.target;
+  if (t.closest('a, button, label, .opt, [data-photo]')) sound.tap();
+  const pref = t.closest('[data-pref]');
+  if (pref) { settings.toggle(pref); return; }
   const opt = t.closest('.opt');
   if (opt) { post.pick(opt); return; }
   const k = t.closest('[data-kind]');

@@ -54,6 +54,7 @@ let panel = 'out';
 let waitCount = null;
 let onWait = () => {};
 export const adminWait = fn => { onWait = fn; fn(waitCount); };
+export const waiting = () => waitCount;
 let stops = [];
 function stopAll(names) {
   stops.forEach(s => s());

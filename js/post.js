@@ -6,12 +6,13 @@ import { $, reduce, toast, watch, photo } from './ui.js';
 import { shotsField, upload } from './photos.js';
 import * as store from './store.js';
 import { send } from './stats.js';
+import * as sound from './sound.js';
 
 const back = href => `<a class="back" href="${href}" aria-label="Назад">${icon('arrow')}</a>`;
 
 // Связь с админом: WhatsApp автора с готовой первой фразой
 export const toAdmin = () => wa(ADMIN_PHONE, 'Здравствуйте! Пишу с доски «Валарг».');
-const adminLine = text => `<a class="to-admin" href="${toAdmin()}" target="_blank" rel="noopener">${waIcon}${text}</a>`;
+export const adminLine = text => `<a class="to-admin" href="${toAdmin()}" target="_blank" rel="noopener">${waIcon}${text}</a>`;
 
 // Имя и номер запоминаются на телефоне: второй раз вводить не нужно
 function contact() {
@@ -178,6 +179,7 @@ export async function submit(form) {
     });
     keepContact(data.name, data.phone, data.wa);
     send({ 'Объявления': { 'Отправили': LABEL[type] } });
+    sound.sent();
     location.hash = '#/gotovo';
   } catch (e) {
     if (e.message.startsWith('Одно объявление в сутки')) send({ 'Объявления': { 'Защита остановила': LABEL[type] } });

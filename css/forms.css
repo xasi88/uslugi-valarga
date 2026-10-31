@@ -79,6 +79,23 @@
 .done-mark svg { width: 36px; height: 36px; stroke-width: 2.8; }
 .done .scr-lead { max-width: 32ch; }
 
+/* Настройки: бумажные карточки, переключатели парой пилюль, как защита от спама в панели */
+.set-head { display: flex; align-items: center; gap: 14px; }
+.set { display: grid; gap: 12px; padding: 16px; border: var(--edge); border-radius: 18px; background: var(--paper); color: var(--ink); box-shadow: var(--drop-sm); }
+.set h2 { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; }
+.set h2 svg { width: 22px; height: 22px; }
+.set p { color: var(--ink-2); }
+.set-pick { display: flex; flex-wrap: wrap; gap: 10px; }
+.set .btn { justify-self: start; }
+.set .n { min-width: 24px; padding: 1px 7px; border-radius: var(--r-pill); background: var(--lemon); color: var(--ink); font-size: 12px; text-align: center; }
+.set-note { font-size: var(--fs-cap); }
+.vers ul { margin-top: 6px; padding-left: 20px; color: var(--ink-2); }
+.vers li + li { margin-top: 4px; }
+.vers b { color: var(--ink); }
+.vers summary { display: flex; align-items: center; min-height: 44px; font-weight: 800; cursor: pointer; }
+.vers details[open] { display: grid; gap: 12px; }
+.set-foot { color: var(--mint); font-size: var(--fs-small); text-align: center; }
+
 /* «Мои»: наклейка с фото слева, статус и кнопки */
 .mine { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }
 .mine-item { display: grid; grid-template-columns: 72px 1fr; gap: 6px 14px; padding: 14px; border: var(--edge); border-radius: var(--r-card); background: var(--paper); color: var(--ink); box-shadow: var(--drop); }
