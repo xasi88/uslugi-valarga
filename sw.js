@@ -3,13 +3,13 @@
 // версию, без сети берётся копия. Объявления не копируются: их держит база Firebase.
 // Хранилище копий общее у всех сайтов адреса: служба удаляет только свои копии (имя с PREFIX).
 const PREFIX = 'uslugi-valarga-';
-const CACHE = PREFIX + 'v4';
+const CACHE = PREFIX + 'v5';
 const SHELL = [
   '/', '/admin/', '/manifest.webmanifest', '/admin/manifest.webmanifest',
   '/css/base.css', '/css/site.css', '/css/forms.css', '/css/admin.css',
   '/js/app.js', '/js/admin.js', '/js/board.js', '/js/config.js', '/js/fb.js', '/js/icons.js', '/js/install.js',
   '/js/mine.js', '/js/photos.js', '/js/post.js', '/js/stats.js', '/js/store.js', '/js/ui.js', '/js/util.js',
-  '/js/prefs.js', '/js/settings.js', '/js/sound.js', '/js/versions.js',
+  '/js/prefs.js', '/js/push.js', '/js/settings.js', '/js/sound.js', '/js/versions.js',
   '/img/icon.svg', '/img/icon-192.png', '/img/admin-192.png',
 ];
 
@@ -38,6 +38,19 @@ self.addEventListener('fetch', e => {
   }).catch(() => caches.match(req, { ignoreSearch: true })
     .then(hit => hit || (req.mode === 'navigate' ? caches.match(url.pathname.startsWith('/admin') ? '/admin/' : '/') : undefined))
     .then(hit => hit || Response.error())));
+});
+
+// Уведомление от почтальона (worker, через FCM). Доска на экране скажет сама: подсказкой и звуком.
+// В панели админа таких подсказок нет: там уведомление показывается
+self.addEventListener('push', e => {
+  let d;
+  try { d = e.data.json().data || {}; } catch { return; }
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    if (list.some(c => c.visibilityState === 'visible' && !new URL(c.url).pathname.startsWith('/admin'))) return;
+    return self.registration.showNotification(d.title || 'Валарг', {
+      body: d.body || '', icon: '/img/icon-192.png', tag: d.url || '/', data: { url: d.url || '/' },
+    });
+  }));
 });
 
 // Касание уведомления: открытое окно доски выходит вперёд, иначе доска открывается на нужном экране

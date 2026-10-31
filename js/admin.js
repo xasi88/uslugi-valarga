@@ -5,6 +5,7 @@ import { esc, ago, wa, phoneNice, photoUrl, priceText as cost, payText } from '.
 import { CLOUDINARY } from './config.js';
 import { $, toast } from './ui.js';
 import * as store from './store.js';
+import * as push from './push.js';
 import './install.js';
 
 let tab = 'wait';
@@ -84,9 +85,11 @@ document.addEventListener('click', e => {
   // «Удалить» стирает объявление из базы навсегда: и с доски, и из «Моих» у автора (решение автора 2026-10-30)
   if (a.dataset.a === 'del' && !confirm('Удалить объявление навсегда? Вернуть его не получится.')) return;
   const go = () => {
-    if (a.dataset.a === 'ok') { store.setStatus(c.dataset.type, c.dataset.id, 'ok'); toast('Объявление на доске.'); }
-    if (a.dataset.a === 'no') { store.setStatus(c.dataset.type, c.dataset.id, 'no'); toast('Объявление не на доске. Автор увидит это в «Моих».'); }
-    if (a.dataset.a === 'off') { store.setStatus(c.dataset.type, c.dataset.id, 'off'); toast('Объявление снято с доски. Автор увидит это в «Моих».'); }
+    // Решение админа записано в базу: почтальон скажет автору объявления, даже если у того доска закрыта
+    const tell = () => push.ping('status', c.dataset.type, c.dataset.id);
+    if (a.dataset.a === 'ok') { store.setStatus(c.dataset.type, c.dataset.id, 'ok').then(tell); toast('Объявление на доске.'); }
+    if (a.dataset.a === 'no') { store.setStatus(c.dataset.type, c.dataset.id, 'no').then(tell); toast('Объявление не на доске. Автор увидит это в «Моих».'); }
+    if (a.dataset.a === 'off') { store.setStatus(c.dataset.type, c.dataset.id, 'off').then(tell); toast('Объявление снято с доски. Автор увидит это в «Моих».'); }
     if (a.dataset.a === 'del') { store.remove(c.dataset.type, c.dataset.id); toast('Объявление удалено из базы.'); }
   };
   // Карточка уезжает вбок, потом список перерисовывается

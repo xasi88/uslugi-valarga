@@ -13,6 +13,7 @@ import { FIREBASE } from './config.js';
 // на телефоне автора его объявления жителя не смешиваются с правами админа.
 export const isPanel = location.pathname.includes('/admin/');
 const app = initializeApp(FIREBASE, isPanel ? 'admin' : undefined);
+export const fbApp = app;
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 // Доска видит вход панели на этом телефоне: так появляется значок «Админ»

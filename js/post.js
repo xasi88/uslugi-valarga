@@ -7,6 +7,7 @@ import { shotsField, upload } from './photos.js';
 import * as store from './store.js';
 import { send } from './stats.js';
 import * as sound from './sound.js';
+import * as push from './push.js';
 
 const back = href => `<a class="back" href="${href}" aria-label="Назад">${icon('arrow')}</a>`;
 
@@ -173,10 +174,11 @@ export async function submit(form) {
       photos.push(await upload(list[i]));
     }
     btn.textContent = 'Отправляем';
-    await store.add(type, { ...data, photos }, () => {
+    const item = await store.add(type, { ...data, photos }, () => {
       btn.textContent = 'Отправляем. Не закрывайте страницу';
       toast('Связь слабая. Объявление уйдёт, когда связь станет лучше.');
     });
+    push.ping('new', type, item.id);
     keepContact(data.name, data.phone, data.wa);
     send({ 'Объявления': { 'Отправили': LABEL[type] } });
     sound.sent();

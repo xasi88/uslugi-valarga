@@ -163,6 +163,22 @@ export async function add(type, data, onSlow = () => {}) {
   return item;
 }
 
+// Адрес телефона для уведомлений (push.js). Номер записи: отпечаток адреса, сам адрес длинный.
+// Житель: адрес со своим входом, почтальон найдёт его по владельцу объявления. Админ: ещё и в pushAdmin
+const pushId = async t => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)))]
+  .slice(0, 20).map(b => b.toString(16).padStart(2, '0')).join('');
+export async function savePush(token) {
+  const id = await pushId(token), u = await user();
+  await setDoc(doc(db, 'push', id), { token, uid: u.uid, at: serverTimestamp() });
+  await adminAuth.authStateReady();
+  if (adminAuth.currentUser) await setDoc(doc(adminDb, 'pushAdmin', id), { token, at: serverTimestamp() }).catch(() => {});
+}
+export async function dropPush(token) {
+  const id = await pushId(token);
+  await deleteDoc(doc(db, 'push', id)).catch(() => {});
+  if (adminAuth.currentUser) await deleteDoc(doc(adminDb, 'pushAdmin', id)).catch(() => {});
+}
+
 const quiet = p => p.catch(e => toast(why(e)));
 export const setStatus = (type, id, status) => quiet(updateDoc(doc(db, type, id), { status }));
 export const setGuard = on => quiet(setDoc(doc(db, 'settings', 'board'), { spam: on }));

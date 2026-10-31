@@ -11,6 +11,8 @@ import * as store from './store.js';
 import * as stats from './stats.js';
 import * as settings from './settings.js';
 import * as sound from './sound.js';
+import * as push from './push.js';
+import { prefs } from './prefs.js';
 import './install.js';
 
 // Адрес → экран и пункт меню
@@ -157,3 +159,5 @@ toAdmin.insertAdjacentHTML('afterbegin', waIcon);
 
 renderTab();
 route();
+// Уведомления включены: обновить адрес телефона в базе (адрес меняется, админ мог войти в панель)
+if (prefs().notify && window.Notification?.permission === 'granted') push.on();

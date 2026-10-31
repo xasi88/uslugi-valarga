@@ -1,6 +1,7 @@
 // Экран «Настройки» (#/nastroyki, шестерёнка в шапке): звук, уведомления, админ, «Что нового».
-// Уведомления пока без сервера рассылки: приходят, пока доска открыта или недавно свёрнута.
-// Объявление, которое поменялось, пока доска была закрыта, доска показывает при следующем открытии
+// Уведомления: доска открыта или свёрнута: подсказка, звук, уведомление телефона (tell).
+// Доска закрыта: уведомление шлёт почтальон в Cloudflare (push.js, worker). Объявление, которое
+// поменялось, пока доска была закрыта, доска ещё раз показывает подсказкой при следующем открытии
 import { icon } from './icons.js';
 import { esc } from './util.js';
 import { toast } from './ui.js';
@@ -9,6 +10,7 @@ import * as sound from './sound.js';
 import * as store from './store.js';
 import { VERSIONS } from './versions.js';
 import { adminLine } from './post.js';
+import * as push from './push.js';
 
 const day = d => { const t = new Date(d + 'T12:00'); return `${t.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })} ${t.getFullYear()}`; };
 const pair = (name, on, yes, no) => `<div class="set-pick">
@@ -33,7 +35,7 @@ export function settingsScreen() {
     <section class="set"><h2>${icon('bell')}Уведомления</h2>
       <p>Ваше объявление выложено, не прошло проверку или снято с доски.${n === null ? '' : ' Админу: новое объявление на проверке.'}</p>
       ${pair('notify', p.notify, 'Включены', 'Выключены')}
-      <p class="set-note">Пока приходят, когда доска открыта или недавно свёрнута.</p></section>
+      <p class="set-note">Приходят и когда доска закрыта. На iPhone: если доска поставлена на экран.</p></section>
     <section class="set" id="set-admin"><h2>${icon('ok')}Админ</h2>${adminBox(n)}</section>
     <section class="set vers"><h2>${icon('clock')}Что нового</h2>
       ${VERSIONS.slice(0, 3).map(ver).join('')}
@@ -59,7 +61,9 @@ export async function toggle(btn) {
   setPref(name, on);
   btn.parentNode.querySelectorAll('[data-pref]').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.on === '1') === on)));
   if (name === 'sound' && on) sound.notify();
-  if (name === 'notify') toast(on ? 'Уведомления включены.' : 'Уведомления выключены.');
+  if (name !== 'notify') return;
+  if (!on) { push.off(); return toast('Уведомления выключены.'); }
+  toast(await push.on() ? 'Уведомления включены.' : 'Уведомления включены. При закрытой доске этот телефон их не примет.');
 }
 
 // Сказать человеку: звук и подсказка на экране, а при свёрнутой доске уведомление телефона
