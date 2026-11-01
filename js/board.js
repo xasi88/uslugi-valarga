@@ -81,7 +81,9 @@ export function renderList() {
   if (store.robot) { $('#grid').hidden = $('#reqs').hidden = true; return; }
   const list = items().filter(match);
   const [href, label] = ADD[state.view];
-  const empty = `<div class="empty"><p>${state.q || state.kind !== 'all' ? 'Ничего не нашлось.' : 'Пока пусто.'}</p>
+  // Объявления ещё не пришли: «Загружаем», а не «Пока пусто». Иначе на слабой связи доска кажется пустой
+  const empty = !store.loaded() ? '<div class="empty"><p>Загружаем объявления.</p></div>'
+    : `<div class="empty"><p>${state.q || state.kind !== 'all' ? 'Ничего не нашлось.' : 'Пока пусто.'}</p>
     <a class="btn btn-ink" href="${href}">${label}</a></div>`;
   $('#grid').hidden = !isM;
   $('#reqs').hidden = isM;
@@ -100,6 +102,8 @@ export function pickKind(id) {
 export function itemPage(type, id) {
   const m = store.find(type, id);
   const home = type === 'goods' ? ['#/tovary', 'К товарам'] : ['#/', 'К услугам'];
+  // Объявления ещё не пришли: страница ждёт их (data-wait), app.js нарисует её заново
+  if (!m && !store.loaded()) return '<div class="scr empty" data-wait><p>Загружаем объявление.</p></div>';
   if (!m || m.status !== 'ok') return `<div class="scr empty"><p>Объявление снято с доски.</p><a class="btn btn-ink" href="${home[0]}">${home[1]}</a></div>`;
   const k = kindOf(type, m.kind);
   const shots = m.photos?.length ? m.photos : [null];

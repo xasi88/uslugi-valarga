@@ -43,6 +43,8 @@ const HEAD = {
 let boardY = 0;
 let canBack = false;
 let booted = false;
+// Экран, который сейчас открыт не на витрине: страница объявления рисуется заново, когда придут объявления
+let current = null;
 function route() {
   const h = location.hash || '#/';
   const m = h.match(/^#\/([mt])\/([\w-]+)$/);
@@ -55,6 +57,8 @@ function route() {
   if (page) canBack = prev === page[2];
   if (view === 'settings') canBack = booted;
   booted = true;
+  // Firebase нужен для отправки, «Моих» и настроек: он грузится при входе на эти экраны, витрине не нужен
+  if (['post', 'mine', 'settings'].includes(view)) store.wake().catch(() => {});
   document.body.dataset.view = view;
   stats.screen(view);
   document.querySelectorAll('.tab a').forEach((a, i) => a.classList.toggle('on', i === tabI));
@@ -70,6 +74,7 @@ function route() {
     const back = Object.values(PAGES).some(([pv, , bv]) => prev === pv && view === bv);
     scrollTo({ top: back ? boardY : 0, behavior: 'auto' });
   } else {
+    current = screen;
     post.showScreen(screen());
     if (page) board.galleryCounter();
     scrollTo({ top: 0, behavior: 'auto' });
@@ -81,6 +86,8 @@ store.onChange(() => {
   const view = document.body.dataset.view;
   if (BOARDS.includes(view)) { board.renderKinds(); board.renderList(); }
   if (view === 'mine') post.showScreen(mineScreen());
+  // Ссылка на объявление (из WhatsApp) открылась раньше, чем пришли объявления: страница ждала их
+  if ($('#screen [data-wait]')) { post.showScreen(current()); board.galleryCounter(); }
   settings.checkMine();
 });
 
@@ -159,5 +166,6 @@ toAdmin.insertAdjacentHTML('afterbegin', waIcon);
 
 renderTab();
 route();
-// Уведомления включены: обновить адрес телефона в базе (адрес меняется, админ мог войти в панель)
-if (prefs().notify && window.Notification?.permission === 'granted') push.on();
+// Уведомления включены: обновить адрес телефона в базе (адрес меняется, админ мог войти в панель).
+// Когда доска уже на экране: для этого грузится Firebase
+if (prefs().notify && window.Notification?.permission === 'granted') setTimeout(push.on, 2500);

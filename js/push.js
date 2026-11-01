@@ -1,7 +1,7 @@
 // Уведомления при закрытой доске (с 2026-10-31). Телефон получает адрес для уведомлений
 // (Firebase Cloud Messaging), доска хранит его в базе. Почтальон в Cloudflare (папка worker) шлёт на него.
-// Доска зовёт почтальона после отправки объявления, панель после решения админа
-import { fbApp } from './fb.js';
+// Доска зовёт почтальона после отправки объявления, панель после решения админа.
+// Firebase загружается по нужде (store.wake): доска без уведомлений его не ждёт
 import { PUSH } from './config.js';
 import * as store from './store.js';
 
@@ -12,6 +12,7 @@ const load = async () => (sdk ||= await import('https://www.gstatic.com/firebase
 async function address() {
   const m = await load();
   if (!await m.isSupported()) return null;
+  const { fbApp } = await store.wake();
   const reg = await navigator.serviceWorker.ready;
   return m.getToken(m.getMessaging(fbApp), { vapidKey: PUSH.vapid, serviceWorkerRegistration: reg });
 }
@@ -33,7 +34,7 @@ export async function off() {
     const m = await load();
     const t = await address();
     if (t) await store.dropPush(t);
-    await m.deleteToken(m.getMessaging(fbApp));
+    await m.deleteToken(m.getMessaging((await store.wake()).fbApp));
   } catch { /* не страшно: устаревший адрес почтальон сотрёт сам */ }
 }
 

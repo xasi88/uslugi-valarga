@@ -3,15 +3,15 @@
 // masters: услуги, requests: работа от жителей, goods: товары (продаю и куплю, с 2026-10-31). Торга нет (решение автора 2026-10-30): старые предложения цены не читаются.
 // Житель входит без аккаунта (анонимный вход, он его не видит): по этому входу «Мои»
 // находит свои объявления. Автор входит в панели через Google. Права проверяют правила базы.
-import {
-  auth, db, adminAuth, adminDb, isPanel, GoogleAuthProvider, signInWithPopup, signInAnonymously, onAuthStateChanged, signOut,
-  collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query, where, writeBatch, serverTimestamp,
-} from './fb.js';
+// Скорость (2026-11-01): доска сразу показывает объявления из памяти телефона, потом берёт свежие
+// лёгким запросом (first.js). Тяжёлый Firebase (fb.js) грузится, только когда он нужен: wake()
 import { toast } from './ui.js';
 import { nextTime, isBot, sent } from './util.js';
+import { firstBoard, fetchBoard } from './first.js';
 
 // Поисковый робот видит витрину без объявлений: имена и номера жителей не попадают в поиск (решение автора 2026-10-30)
 export const robot = isBot(navigator.userAgent);
+const isPanel = location.pathname.includes('/admin/');
 
 const DAY = 864e5;
 const TYPES = ['masters', 'requests', 'goods'];
@@ -22,10 +22,34 @@ const subs = new Set();
 export const onChange = fn => subs.add(fn);
 const changed = () => subs.forEach(fn => fn());
 
+// Объявления доски в памяти телефона: при следующем открытии они видны сразу, ещё до ответа базы
+const SAVED = 'uv-board';
+let ready = false;
+// Объявления доски уже есть (из памяти или из базы). Пока нет: экраны пишут «Загружаем», а не «Пока пусто»
+export const loaded = () => ready;
+function put(lists) {
+  TYPES.forEach(t => { parts[t].board = new Map((lists[t] || []).map(x => [x.id, x])); });
+  ready = true;
+}
+function keep() {
+  const lists = Object.fromEntries(TYPES.map(t => [t, [...(parts[t].board?.values() || [])]]));
+  try { localStorage.setItem(SAVED, JSON.stringify(lists)); } catch { /* не страшно */ }
+}
+const mark = (key, on) => { try { on ? localStorage.setItem(key, '1') : localStorage.removeItem(key); } catch { /* не страшно */ } };
+const has = key => { try { return !!localStorage.getItem(key); } catch { return false; } };
+
+let f = null;
+let waking = null;
+// Загрузить Firebase и подписаться на базу. Повторный вызов отдаёт тот же модуль fb.js.
+// Нет связи: следующий вызов попробует снова
+export const wake = () => (waking ||= import('./fb.js').then(m => { f = m; start(); return m; })
+  .catch(e => { waking = null; throw e; }));
+
 function listen(type, name, q, onError) {
-  return onSnapshot(q, snap => {
+  return f.onSnapshot(q, snap => {
     parts[type][name] = new Map(snap.docs.map(d => [d.id, { ...d.data(), id: d.id }]));
-    if (panel === 'checking') panel = 'in';
+    if (panel === 'checking') { panel = 'in'; mark('uv-admin', true); }
+    if (name === 'board') { ready = true; keep(); }
     changed();
   }, e => {
     delete parts[type][name];
@@ -46,9 +70,9 @@ const list = type => merged(type).sort((a, b) => b.at - a.at);
 let guard = true;
 const group = type => (type === 'goods' ? 'g' : '');
 export const guardOn = () => guard;
-onSnapshot(doc(db, 'settings', 'board'), s => { guard = s.data()?.spam !== false; changed(); }, () => {});
 
 let uid = null;
+let uidKnown = false;
 let panel = 'out';
 // Значок «Админ» на доске: число объявлений на проверке или null (этот телефон не входил почтой админа)
 let waitCount = null;
@@ -62,48 +86,92 @@ function stopAll(names) {
   TYPES.forEach(t => names.forEach(n => delete parts[t][n]));
 }
 
-if (!isPanel && !robot) {
-  // Доска: всем людям видны выложенные объявления
-  TYPES.forEach(t => listen(t, 'board', query(collection(db, t), where('status', '==', 'ok'))));
-  // Свои объявления любого статуса, если этот телефон уже входил
-  onAuthStateChanged(auth, u => {
-    stopAll(['mine']);
-    uid = u?.uid || null;
-    if (u) stops = TYPES.map(t => listen(t, 'mine', query(collection(db, t), where('owner', '==', u.uid))));
-    changed();
-  });
-  // Вход панели на этом телефоне: доска считает объявления на проверке. Чужой почте база откажет
-  let stopWait = [];
-  onAuthStateChanged(adminAuth, u => {
-    stopWait.forEach(s => s());
-    stopWait = [];
-    const n = {};
-    const show = v => { waitCount = v; onWait(v); };
-    show(null);
-    if (u) stopWait = TYPES.map(t => onSnapshot(query(collection(adminDb, t), where('status', '==', 'wait')),
-      snap => { n[t] = snap.size; if (TYPES.every(k => k in n)) show(TYPES.reduce((s, k) => s + n[k], 0)); },
-      () => show(null)));
-  });
-} else if (isPanel) {
-  // Панель: всё видит только почта админа. Чужую почту база не пустит
-  onAuthStateChanged(auth, u => {
-    stopAll(['all']);
-    panel = u ? 'checking' : 'out';
-    changed();
-    if (!u) return;
-    const fail = e => {
-      if (e.code !== 'permission-denied' || panel === 'denied') return;
-      panel = 'denied';
-      stopAll(['all']);
+// Подписки Firebase: запускает wake()
+function start() {
+  const { db, auth, adminAuth, adminDb, collection, doc, query, where, onSnapshot, onAuthStateChanged } = f;
+  onSnapshot(doc(db, 'settings', 'board'), s => { guard = s.data()?.spam !== false; changed(); }, () => {});
+  if (!isPanel) {
+    // Доска: всем людям видны выложенные объявления. С Firebase их приносит подписка, лёгкий запрос не нужен
+    TYPES.forEach(t => listen(t, 'board', query(collection(db, t), where('status', '==', 'ok'))));
+    // Свои объявления любого статуса, если этот телефон уже входил
+    onAuthStateChanged(auth, u => {
+      stopAll(['mine']);
+      uid = u?.uid || null;
+      uidKnown = true;
+      if (u) stops = TYPES.map(t => listen(t, 'mine', query(collection(db, t), where('owner', '==', u.uid))));
       changed();
-    };
-    stops = TYPES.map(t => listen(t, 'all', collection(db, t), fail));
-  });
+    });
+    // Вход панели на этом телефоне: доска считает объявления на проверке. Чужой почте база откажет
+    let stopWait = [];
+    onAuthStateChanged(adminAuth, u => {
+      stopWait.forEach(s => s());
+      stopWait = [];
+      const n = {};
+      const show = v => { waitCount = v; onWait(v); };
+      show(null);
+      if (!u) mark('uv-admin', false);
+      if (u) stopWait = TYPES.map(t => onSnapshot(query(collection(adminDb, t), where('status', '==', 'wait')),
+        snap => { n[t] = snap.size; if (TYPES.every(k => k in n)) { show(TYPES.reduce((s, k) => s + n[k], 0)); mark('uv-admin', true); } },
+        () => show(null)));
+    });
+  } else {
+    // Панель: всё видит только почта админа. Чужую почту база не пустит
+    onAuthStateChanged(auth, u => {
+      stopAll(['all']);
+      panel = u ? 'checking' : 'out';
+      changed();
+      if (!u) return;
+      const fail = e => {
+        if (e.code !== 'permission-denied' || panel === 'denied') return;
+        panel = 'denied';
+        stopAll(['all']);
+        changed();
+      };
+      stops = TYPES.map(t => listen(t, 'all', collection(db, t), fail));
+    });
+  }
+}
+
+// Свежие объявления лёгким запросом, пока Firebase не загружен. Доска рисуется заново,
+// только если объявления правда поменялись: иначе она мигала бы при каждой проверке
+let fetchedAt = 0;
+let shown = '';
+async function refresh(p) {
+  if (f) return;
+  fetchedAt = Date.now();
+  let lists;
+  try { lists = await p; } catch {
+    // Нет связи: остаются объявления из памяти. Объявлений нет совсем: ещё попытка через 5 секунд
+    if (!ready) setTimeout(() => refresh(fetchBoard()), 5000);
+    return;
+  }
+  const text = JSON.stringify(lists);
+  if (f || text === shown) return;
+  shown = text;
+  put(lists);
+  try { localStorage.setItem(SAVED, text); } catch { /* не страшно */ }
+  changed();
+}
+
+if (isPanel) wake();
+else if (!robot) {
+  try { const saved = localStorage.getItem(SAVED); if (saved) { put(JSON.parse(saved)); shown = saved; } } catch { /* памяти нет */ }
+  refresh(firstBoard);
+  // Без Firebase доска сама берёт свежие объявления: человек вернулся на доску или прошло 2 минуты
+  const stale = ms => !document.hidden && Date.now() - fetchedAt > ms;
+  setInterval(() => { if (stale(110e3)) refresh(fetchBoard()); }, 120e3);
+  document.addEventListener('visibilitychange', () => { if (stale(60e3)) refresh(fetchBoard()); });
+  // Телефону, который уже размещал или где входил админ, Firebase нужен и на доске: подсказки
+  // о своих объявлениях, число на шестерёнке. Он грузится, когда доска уже на экране
+  if (['uv-last', 'uv-last-goods', 'uv-contact', 'uv-admin'].some(has)) setTimeout(() => wake().catch(() => {}), 2500);
 }
 
 export const board = type => list(type).filter(x => x.status === 'ok');
 export const find = (type, id) => list(type).find(x => x.id === id);
 export const all = list;
+
+// Свои объявления уже пришли из базы. Пока нет: «Мои» пишет «Загружаем», а не «Вы пока ничего не разместили»
+export const mineLoaded = () => uidKnown && (!uid || TYPES.every(t => parts[t].mine));
 
 export function mine() {
   if (!uid) return [];
@@ -135,6 +203,7 @@ const why = e => (e?.code !== 'permission-denied'
   : guard ? 'Одно объявление в сутки. С этого номера сегодня уже отправляли. Попробуйте завтра.'
     : 'База не приняла запись. Проверьте поля и попробуйте ещё раз.');
 async function user() {
+  const { auth, signInAnonymously } = await wake();
   await auth.authStateReady();
   return auth.currentUser || (await signInAnonymously(auth)).user;
 }
@@ -145,6 +214,7 @@ export async function add(type, data, onSlow = () => {}) {
   let item;
   try {
     const u = await user();
+    const { db, doc, collection, writeBatch, serverTimestamp } = f;
     const ref = doc(collection(db, type));
     item = { ...data, at: Date.now(), status: 'wait', owner: u.uid };
     // В той же записи отметка времени для телефона и для номера: по ним база считает сутки.
@@ -169,24 +239,26 @@ const pushId = async t => [...new Uint8Array(await crypto.subtle.digest('SHA-256
   .slice(0, 20).map(b => b.toString(16).padStart(2, '0')).join('');
 export async function savePush(token) {
   const id = await pushId(token), u = await user();
+  const { db, adminDb, adminAuth, doc, setDoc, serverTimestamp } = f;
   await setDoc(doc(db, 'push', id), { token, uid: u.uid, at: serverTimestamp() });
   await adminAuth.authStateReady();
   if (adminAuth.currentUser) await setDoc(doc(adminDb, 'pushAdmin', id), { token, at: serverTimestamp() }).catch(() => {});
 }
 export async function dropPush(token) {
   const id = await pushId(token);
+  const { db, adminDb, adminAuth, doc, deleteDoc } = await wake();
   await deleteDoc(doc(db, 'push', id)).catch(() => {});
   if (adminAuth.currentUser) await deleteDoc(doc(adminDb, 'pushAdmin', id)).catch(() => {});
 }
 
-const quiet = p => p.catch(e => toast(why(e)));
-export const setStatus = (type, id, status) => quiet(updateDoc(doc(db, type, id), { status }));
-export const setGuard = on => quiet(setDoc(doc(db, 'settings', 'board'), { spam: on }));
-export const remove = (type, id) => quiet(deleteDoc(doc(db, type, id)));
+const quiet = job => wake().then(job).catch(e => toast(why(e)));
+export const setStatus = (type, id, status) => quiet(m => m.updateDoc(m.doc(m.db, type, id), { status }));
+export const setGuard = on => quiet(m => m.setDoc(m.doc(m.db, 'settings', 'board'), { spam: on }));
+export const remove = (type, id) => quiet(m => m.deleteDoc(m.doc(m.db, type, id)));
 
 // Вход админа в панели: out (не вошёл), checking (проверяем), in (админ), denied (чужая почта)
 export const adminState = () => panel;
-export const signIn = () => signInWithPopup(auth, new GoogleAuthProvider()).catch(e => {
+export const signIn = () => wake().then(m => m.signInWithPopup(m.auth, new m.GoogleAuthProvider())).catch(e => {
   if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') toast('Вход не удался. Попробуйте ещё раз.');
 });
-export const signOutAdmin = () => signOut(auth);
+export const signOutAdmin = () => wake().then(m => m.signOut(m.auth));

@@ -26,9 +26,22 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="img/icon-180.png">
 <meta name="apple-mobile-web-app-title" content="Валарг">
+<!-- Скорость (2026-11-01). Связь с базой и фото открывается заранее. Первые объявления просит first.js,
+     не дожидаясь остального кода. Браузер берёт все файлы кода сразу, а не по цепочке:
+     новый файл кода дописать сюда и в sw.js. Шрифты не держат экран: до них текст идёт запасным шрифтом -->
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://res.cloudinary.com">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@800;900&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script type="module" async src="js/first.js"></script>
+<link rel="modulepreload" href="js/app.js"><link rel="modulepreload" href="js/config.js"><link rel="modulepreload" href="js/util.js">
+<link rel="modulepreload" href="js/store.js"><link rel="modulepreload" href="js/ui.js"><link rel="modulepreload" href="js/icons.js">
+<link rel="modulepreload" href="js/board.js"><link rel="modulepreload" href="js/post.js"><link rel="modulepreload" href="js/photos.js">
+<link rel="modulepreload" href="js/mine.js"><link rel="modulepreload" href="js/stats.js"><link rel="modulepreload" href="js/settings.js">
+<link rel="modulepreload" href="js/sound.js"><link rel="modulepreload" href="js/push.js"><link rel="modulepreload" href="js/prefs.js">
+<link rel="modulepreload" href="js/install.js"><link rel="modulepreload" href="js/versions.js">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@800;900&family=Manrope:wght@500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@800;900&family=Manrope:wght@500;600;700;800&display=swap"></noscript>
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/site.css">
 <link rel="stylesheet" href="css/forms.css">

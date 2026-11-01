@@ -12,10 +12,15 @@ const on = location.protocol === 'https:' && !robot;
 if (on) {
   window.ym = window.ym || function () { (window.ym.a = window.ym.a || []).push(arguments); };
   window.ym.l = Date.now();
-  const s = document.createElement('script');
-  s.async = true;
-  s.src = 'https://mc.yandex.ru/metrika/tag.js';
-  document.head.appendChild(s);
+  // Код Метрики (73 КБ) грузится, когда доска уже на экране: он не отнимает связь у объявлений и фото (2026-11-01).
+  // До него посылки ждут в очереди window.ym.a
+  const tag = () => setTimeout(() => {
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://mc.yandex.ru/metrika/tag.js';
+    document.head.appendChild(s);
+  }, 1500);
+  if (document.readyState === 'complete') tag(); else addEventListener('load', tag, { once: true });
   window.ym(YM, 'init', { clickmap: false, trackLinks: true, accurateTrackBounce: true, webvisor: false });
 }
 

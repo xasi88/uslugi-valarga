@@ -98,3 +98,19 @@ export async function sent(p, onSlow, ms = 8000) {
   const t = setTimeout(onSlow, ms);
   try { return await p; } finally { clearTimeout(t); }
 }
+
+// Объявление из лёгкого ответа базы (first.js): { title: { stringValue: 'Ворота' } } → { title: 'Ворота' }.
+// Тот же вид, что отдаёт Firebase: числа числами, время числом миллисекунд
+export function fromRest(fields = {}) {
+  const val = v => {
+    if ('stringValue' in v) return v.stringValue;
+    if ('integerValue' in v) return Number(v.integerValue);
+    if ('doubleValue' in v) return v.doubleValue;
+    if ('booleanValue' in v) return v.booleanValue;
+    if ('arrayValue' in v) return (v.arrayValue.values || []).map(val);
+    if ('mapValue' in v) return fromRest(v.mapValue.fields);
+    if ('timestampValue' in v) return Date.parse(v.timestampValue);
+    return null;
+  };
+  return Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, val(v)]));
+}

@@ -41,7 +41,7 @@ export function mineScreen() {
   return `<div class="scr">
     <h1>Мои объявления</h1>
     <p class="scr-lead">Объявления, которые вы разместили с этого телефона.</p>
-    ${list.length ? `<ul class="mine">${list.map(item).join('')}</ul>` : `<div class="empty-mine">
+    ${!store.mineLoaded() ? '<div class="empty-mine"><p>Загружаем ваши объявления.</p></div>' : list.length ? `<ul class="mine">${list.map(item).join('')}</ul>` : `<div class="empty-mine">
       <p>Вы пока ничего не разместили.</p>
       <a class="btn btn-ink" href="#/razmestit">Разместить ${icon('arrow')}</a>
     </div>`}
