@@ -1,5 +1,6 @@
 // Доска «Валарг»: переходы между экранами, меню, поиск, касания.
-// Экраны: услуги, работа и товары (board.js), «Разместить» (post.js), «Мои» (mine.js).
+// Экраны: доска одной лентой (board.js), «Разместить» (post.js), «Мои» (mine.js).
+// Услуги, работа и товары с 2026-11-01 на одной ленте по дням, вкладок разделов нет.
 // Внутри кода «Работа» зовётся requests, «Товары» goods: так называются собрания в базе.
 import { icon, waIcon } from './icons.js';
 import { $, toast, viewPhoto } from './ui.js';
@@ -17,28 +18,22 @@ import './install.js';
 
 // Адрес → экран и пункт меню
 const ROUTES = {
-  '#/': ['masters', 0],
-  '#/rabota': ['requests', 1],
-  '#/razmestit': ['post', 2, post.choiceScreen],
-  '#/razmestit/rabota': ['post', 2, post.requestForm],
-  '#/razmestit/usluga': ['post', 2, post.masterForm],
-  '#/razmestit/tovar': ['post', 2, post.goodsForm],
-  '#/gotovo': ['post', 2, post.doneScreen],
-  '#/tovary': ['goods', 3],
-  '#/moi': ['mine', 4, mineScreen],
+  '#/': ['board', 0],
+  '#/razmestit': ['post', 1, post.choiceScreen],
+  '#/razmestit/usluga': ['post', 1, post.masterForm],
+  '#/razmestit/rabota': ['post', 1, post.requestForm],
+  '#/razmestit/prodayu': ['post', 1, () => post.goodsForm('sell')],
+  '#/razmestit/kuplyu': ['post', 1, () => post.goodsForm('buy')],
+  '#/gotovo': ['post', 1, post.doneScreen],
+  '#/moi': ['mine', 2, mineScreen],
   '#/nastroyki': ['settings', -1, settings.settingsScreen],
 };
-// Страница плитки: мастер (#/m/<номер>) или товар (#/t/<номер>), пункт меню своего раздела
-const PAGES = { m: ['master', 0, 'masters'], t: ['good', 3, 'goods'] };
-const BOARDS = ['masters', 'requests', 'goods'];
-// Старые адреса до 2026-10-30: ссылки из WhatsApp ведут туда же
-ROUTES['#/zayavki'] = ROUTES['#/rabota'];
+// Страница плитки: мастер (#/m/<номер>) или товар (#/t/<номер>) и собрание в базе
+const PAGES = { m: ['master', 'masters'], t: ['good', 'goods'] };
+// Старые адреса: ссылки из WhatsApp ведут на доску и в ту же форму
+ROUTES['#/rabota'] = ROUTES['#/tovary'] = ROUTES['#/zayavki'] = ROUTES['#/'];
 ROUTES['#/razmestit/zayavka'] = ROUTES['#/razmestit/rabota'];
-const HEAD = {
-  masters: ['Услуги <em>мастеров</em>', 'Смотрите, как мастер уже сделал. Цена на фото.'],
-  requests: ['Работа <em>в Валарге</em>', 'Жители предлагают работу. Оплата указана сразу.'],
-  goods: ['Купить <em>и продать</em>', 'Жители продают и покупают. Цена на фото.'],
-};
+ROUTES['#/razmestit/tovar'] = ROUTES['#/razmestit/prodayu'];
 
 let boardY = 0;
 let canBack = false;
@@ -49,12 +44,12 @@ function route() {
   const h = location.hash || '#/';
   const m = h.match(/^#\/([mt])\/([\w-]+)$/);
   const page = m && PAGES[m[1]];
-  const [view, tabI, screen] = page ? [page[0], page[1], () => board.itemPage(page[2], m[2])] : ROUTES[h] || ROUTES['#/'];
+  const [view, tabI, screen] = page ? [page[0], 0, () => board.itemPage(page[1], m[2])] : ROUTES[h] || ROUTES['#/'];
   const prev = document.body.dataset.view;
-  const onBoard = BOARDS.includes(view);
-  if (page && prev === page[2]) boardY = scrollY;
-  // «Назад» возвращает на витрину, только если человек пришёл с неё. Иначе ссылка из WhatsApp вела бы прочь с сайта
-  if (page) canBack = prev === page[2];
+  const onBoard = view === 'board';
+  if (page && prev === 'board') boardY = scrollY;
+  // «Назад» возвращает на доску, только если человек пришёл с неё. Иначе ссылка из WhatsApp вела бы прочь с сайта
+  if (page) canBack = booted && prev === 'board';
   if (view === 'settings') canBack = booted;
   booted = true;
   // Firebase нужен для отправки, «Моих» и настроек: он грузится при входе на эти экраны, витрине не нужен
@@ -65,13 +60,9 @@ function route() {
   $('#board').hidden = !onBoard;
   $('#screen').hidden = onBoard;
   if (onBoard) {
-    if (view !== board.state.view) board.state.kind = 'all';
-    board.state.view = view;
-    [$('#board-title').innerHTML, $('#board-lead').textContent] = HEAD[view];
-    board.renderKinds();
     board.renderList();
-    // Со страницы плитки назад на витрину: на то же место, где человек был
-    const back = Object.values(PAGES).some(([pv, , bv]) => prev === pv && view === bv);
+    // Со страницы плитки назад на доску: на то же место, где человек был
+    const back = Object.values(PAGES).some(([pv]) => prev === pv);
     scrollTo({ top: back ? boardY : 0, behavior: 'auto' });
   } else {
     current = screen;
@@ -84,7 +75,7 @@ function route() {
 // Данные поменялись (новое объявление, админ выложил): перерисовать открытый экран
 store.onChange(() => {
   const view = document.body.dataset.view;
-  if (BOARDS.includes(view)) { board.renderKinds(); board.renderList(); }
+  if (view === 'board') board.renderList();
   if (view === 'mine') post.showScreen(mineScreen());
   // Ссылка на объявление (из WhatsApp) открылась раньше, чем пришли объявления: страница ждала их
   if ($('#screen [data-wait]')) { post.showScreen(current()); board.galleryCounter(); }
@@ -105,19 +96,17 @@ store.adminWait(n => {
 });
 
 function renderTab() {
-  const TAB = [['all', 'Услуги'], ['job', 'Работа'], ['add', 'Разместить'], ['bag', 'Товары'], ['mine', 'Мои']];
+  const TAB = [['all', 'Доска'], ['add', 'Разместить'], ['mine', 'Мои']];
   document.querySelectorAll('.tab a').forEach((a, i) => { a.innerHTML = '<i>' + icon(TAB[i][0]) + '</i>' + TAB[i][1]; });
 }
 
 document.addEventListener('click', e => {
   const t = e.target;
-  if (t.closest('a, button, label, .opt, [data-photo]')) sound.tap();
+  if (t.closest('a, button, label, summary, .opt, [data-photo]')) sound.tap();
   const pref = t.closest('[data-pref]');
   if (pref) { settings.toggle(pref); return; }
   const opt = t.closest('.opt');
   if (opt) { post.pick(opt); return; }
-  const k = t.closest('[data-kind]');
-  if (k) { board.pickKind(k.dataset.kind); return; }
   const shot = t.closest('[data-shot]');
   if (shot) { removeShot(shot.closest('form'), +shot.dataset.shot); return; }
   const big = t.closest('.req-shots [data-photo], .gal-track [data-photo]');

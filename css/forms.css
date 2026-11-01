@@ -107,3 +107,16 @@
 .mine-acts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
 .mine-acts .btn { flex: 1 1 auto; min-height: 46px; }
 .empty-mine { display: grid; gap: 16px; justify-items: start; padding: 18px; border: var(--edge); border-radius: var(--r-card); background: var(--paper); color: var(--ink-2); box-shadow: var(--drop); font-weight: 700; }
+
+/* Подробности и свой контакт за кнопкой (2026-11-01): на экране формы меньше полей.
+   Раскрытое не сворачивается: поля остаются на виду */
+.more > summary, .who > summary { list-style: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.more > summary::-webkit-details-marker, .who > summary::-webkit-details-marker { display: none; }
+.more[open] > summary, .who[open] > summary { display: none; }
+.more-in { display: grid; gap: 14px; }
+.more > summary { margin-top: 6px; }
+.who > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px; margin-top: 6px; padding: 12px 16px; border: var(--edge); border-radius: var(--r); background: var(--white); color: var(--ink); box-shadow: var(--drop-sm); }
+.who > summary span { display: grid; gap: 2px; min-width: 0; color: var(--ink-2); font-size: var(--fs-small); font-weight: 700; }
+.who > summary b { color: var(--ink); font-size: var(--fs-lead); font-weight: 800; overflow-wrap: anywhere; }
+.who > summary i { font-style: normal; white-space: nowrap; }
+.who > summary em { flex: none; display: grid; place-items: center; min-height: 44px; padding: 0 4px; font-style: normal; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }

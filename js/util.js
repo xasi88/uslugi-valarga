@@ -87,6 +87,17 @@ export function photoBlur(id, cloud) {
   return own(id) ? `${CDN(cloud)}/c_fill,w_60,h_75/e_blur:800/f_auto,q_auto:low/${id}` : id;
 }
 
+// Заголовок дня в ленте доски: «Сегодня», «Вчера», «30 октября». Прошлый год с годом. По дате телефона
+export function dayName(t, now = Date.now()) {
+  const a = new Date(t), b = new Date(now);
+  a.setHours(0, 0, 0, 0);
+  b.setHours(0, 0, 0, 0);
+  const n = Math.round((b - a) / 864e5);
+  if (n <= 0) return 'Сегодня';
+  if (n === 1) return 'Вчера';
+  return a.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }) + (a.getFullYear() !== b.getFullYear() ? ' ' + a.getFullYear() : '');
+}
+
 export const wa = (d, text) => `https://wa.me/${d}?text=${encodeURIComponent(text)}`;
 
 // Обрезать пробелы и длину: поле не может быть бесконечным

@@ -2,7 +2,6 @@
 // Цифры показывает «Статистика проектов», раздел «Валарг». Имя группы меняешь здесь: меняешь и там.
 // В Метрику уходят только экраны, нажатия и виды работ. Имена, номера и тексты объявлений не уходят.
 // Роботу и компьютеру (localhost) счётчик не нужен: он молчит.
-import { kindOf, plainName } from './icons.js';
 import { robot } from './store.js';
 
 const YM = 113926697;
@@ -31,7 +30,7 @@ export function send(params) {
 }
 
 // Экраны доски: отдельные просмотры. Самый первый Метрика считает сама
-const TITLES = { masters: 'Услуги', requests: 'Работа', goods: 'Товары', master: 'Мастер', good: 'Товар', post: 'Разместить', mine: 'Мои', settings: 'Настройки' };
+const TITLES = { board: 'Доска', masters: 'Услуги', requests: 'Работа', goods: 'Товары', master: 'Мастер', good: 'Товар', post: 'Разместить', mine: 'Мои', settings: 'Настройки' };
 const where = () => TITLES[document.body.dataset.view] || 'Доска';
 let first = true;
 export function screen(view) {
@@ -39,14 +38,9 @@ export function screen(view) {
   if (on) window.ym(YM, 'hit', location.href, { title: `${TITLES[view] || view} · Валарг` });
 }
 
-// Связь, виды работ и категории товаров: нажатия на всей доске. Группа «Связь»: что нажали и на каком экране
+// Связь: нажатия на всей доске. Группа «Связь»: что нажали и на каком экране.
+// Ряды видов работ и категорий убраны с доски 2026-11-01: группы «Вид работ» и «Категория товаров» больше не пополняются
 document.addEventListener('click', e => {
-  const k = e.target.closest('[data-kind]');
-  if (k) {
-    const goods = document.body.dataset.view === 'goods';
-    send({ [goods ? 'Категория товаров' : 'Вид работ']: { [k.dataset.kind === 'all' ? 'Все' : plainName(kindOf(goods ? 'goods' : 'masters', k.dataset.kind))]: where() } });
-    return;
-  }
   const a = e.target.closest('a[href]');
   if (!a) return;
   const h = a.getAttribute('href');

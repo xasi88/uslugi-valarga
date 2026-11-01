@@ -38,10 +38,17 @@ const group = (label, inner) => `<fieldset class="field"><legend class="lbl">${l
 const moneyInput = (name, ph) => `<span class="money"><input name="${name}" inputmode="numeric" maxlength="9" placeholder="${ph}" autocomplete="off"><i>₽</i></span>`;
 function who() {
   const c = contact();
-  return field('Ваше имя', `<input name="name" maxlength="30" autocomplete="given-name" value="${esc(c.name || '')}">`) +
+  const fields = field('Ваше имя', `<input name="name" maxlength="30" autocomplete="given-name" value="${esc(c.name || '')}">`) +
     field('Номер телефона', `<input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 928 123-45-67" value="${esc(phoneNice(c.phone || ''))}">`, 'Номер увидят на доске, чтобы вам позвонить или написать.') +
     group('На этом номере есть WhatsApp?', yesNo('wa', c.wa !== false));
+  if (!c.name || !c.phone) return fields;
+  // Имя и номер уже есть на телефоне: одна строка, поля за «Изменить» (решение автора 2026-11-01)
+  return `<details class="who"><summary><span><b>${esc(c.name)}</b><i>${esc(phoneNice(c.phone))}</i>${c.wa === false ? 'Без WhatsApp' : 'Есть WhatsApp'}</span><em>Изменить</em></summary>
+    <div class="more-in">${fields}</div></details>`;
 }
+// Необязательные поля за кнопкой «Добавить подробности» (решение автора 2026-11-01)
+const more = inner => `<details class="more"><summary class="btn btn-line btn-wide">Добавить подробности</summary><div class="more-in">${inner}</div></details>`;
+const maybe = '<small>Можно не выбирать.</small>';
 // Да или нет в рамке, как «От» и «Точно» у цены
 const yesNo = (name, yes) => `<div class="seg" data-name="${name}"><button type="button" class="chip opt" data-v="1" aria-pressed="${yes}">Да</button><button type="button" class="chip opt" data-v="0" aria-pressed="${!yes}">Нет</button></div><input type="hidden" name="${name}" value="${yes ? 1 : 0}">`;
 
@@ -53,10 +60,11 @@ export function choiceScreen() {
     </a>`;
   return `<div class="scr">
     <h1>Разместить</h1>
-    <p class="scr-lead">Бесплатно. Админ группы «Валарг» проверит объявление и выложит его на доску.</p>
-    ${row('#/razmestit/usluga', 'camera', 2, 'Предлагаю услугу', 'Покажите фото работ и цену. Вам позвонят или напишут.')}
-    ${row('#/razmestit/rabota', 'job', 3, 'Предлагаю работу', 'Опишите работу и оплату. Вам позвонят или напишут.')}
-    ${row('#/razmestit/tovar', 'bag', 4, 'Продаю или куплю', 'Покажите товар и цену. Вам позвонят или напишут.')}
+    <p class="scr-lead">Бесплатно. Админ группы «Валарг» проверит объявление и выложит его на доску. Вам позвонят или напишут.</p>
+    ${row('#/razmestit/usluga', 'camera', 2, 'Предлагаю услугу', 'Покажите фото работ и цену.')}
+    ${row('#/razmestit/rabota', 'job', 3, 'Предлагаю работу', 'Опишите работу и оплату.')}
+    ${row('#/razmestit/prodayu', 'bag', 4, 'Продаю', 'Покажите товар и цену.')}
+    ${row('#/razmestit/kuplyu', 'bag', 5, 'Куплю', 'Напишите, что ищете и за сколько.')}
     ${adminLine('Вопрос по доске? Написать админу')}
   </div>`;
 }
@@ -65,13 +73,13 @@ export function requestForm() {
   return `<form class="scr form" data-type="requests" novalidate>
     ${back('#/razmestit')}
     <h1>Предлагаю работу</h1>
-    ${group('Вид работы', kinds())}
     ${field('Что нужно сделать?', '<textarea name="text" maxlength="200" rows="3" placeholder="Например: разгрузить машину кирпича"></textarea>')}
     ${field('Оплата', moneyInput('budget', 'Пусто: договорная'))}
-    ${group('За что оплата?', opts('unit', plain(['за работу', 'за день', 'за час', 'в месяц']), false, ''))}
-    ${group('Когда?', opts('when', [['Сегодня', 'Сегодня'], ['Завтра', 'Завтра'], ['На этой неделе', 'На этой неделе'], ['Не срочно', 'Не срочно']]))}
-    ${field('Улица', '<input name="place" maxlength="40" placeholder="Например: ул. Школьная">', 'Можно не писать.')}
     ${group('Фото', shotsField('requests') + '<small>Можно не добавлять. С фото понятнее, что за работа.</small>')}
+    ${group('Вид работы', kinds() + maybe)}
+    ${more(group('За что оплата?', opts('unit', plain(['за работу', 'за день', 'за час', 'в месяц']), false, ''))
+      + group('Когда?', opts('when', [['Сегодня', 'Сегодня'], ['Завтра', 'Завтра'], ['На этой неделе', 'На этой неделе'], ['Не срочно', 'Не срочно']]))
+      + field('Улица', '<input name="place" maxlength="40" placeholder="Например: ул. Школьная">', 'Можно не писать.'))}
     ${who()}
     <button class="btn btn-ink btn-wide">Отправить на проверку</button>
   </form>`;
@@ -81,29 +89,31 @@ export function masterForm() {
   return `<form class="scr form" data-type="masters" novalidate>
     ${back('#/razmestit')}
     <h1>Предлагаю услугу</h1>
-    ${group('Вид работ', kinds())}
-    ${group('Фото работ', shotsField('masters') + '<small>До 6 фото. Первое фото встанет на витрину.</small>')}
+    ${group('Фото работ', shotsField('masters') + '<small>До 6 фото. Первое фото встанет на доску.</small>')}
     ${field('Что вы делаете?', '<textarea name="title" maxlength="90" rows="2" placeholder="Например: ворота, заборы, навесы"></textarea>')}
     ${group('Цена', `<div class="seg" data-name="from"><button type="button" class="chip opt" data-v="1" aria-pressed="true">От</button><button type="button" class="chip opt" data-v="0" aria-pressed="false">Точно</button></div><input type="hidden" name="from" value="1">${moneyInput('price', 'Пусто: договорная')}`)}
-    ${group('За что цена?', opts('unit', plain(['за работу', 'за час', 'за метр', 'за м²', 'за рейс', 'за урок', 'за кг', 'за штуку']), false, ''))}
-    ${field('Подробнее', '<input name="note" maxlength="60" placeholder="Например: выезд в тот же день">', 'Можно не писать.')}
+    ${group('Вид работ', kinds() + maybe)}
+    ${more(group('За что цена?', opts('unit', plain(['за работу', 'за час', 'за метр', 'за м²', 'за рейс', 'за урок', 'за кг', 'за штуку']), false, ''))
+      + field('Подробнее', '<input name="note" maxlength="60" placeholder="Например: выезд в тот же день">', 'Можно не писать.'))}
     ${who()}
     <button class="btn btn-ink btn-wide">Отправить на проверку</button>
   </form>`;
 }
 
-// Товар: продаю или куплю, категория, фото, цена за единицу или просто цена
-export function goodsForm() {
+// Товар: «Продаю» (sell) или «Куплю» (buy) отдельной кнопкой на экране «Разместить» (решение автора 2026-11-01).
+// Фото, что, цена за единицу или просто цена, категория
+export function goodsForm(deal) {
+  const buy = deal === 'buy';
   return `<form class="scr form" data-type="goods" novalidate>
     ${back('#/razmestit')}
-    <h1>Продаю или куплю</h1>
-    ${group('Что вы хотите?', `<div class="seg" data-name="deal"><button type="button" class="chip opt" data-v="sell" aria-pressed="true">Продаю</button><button type="button" class="chip opt" data-v="buy" aria-pressed="false">Куплю</button></div><input type="hidden" name="deal" value="sell">`)}
-    ${group('Категория', kinds(GOODS))}
-    ${group('Фото', shotsField('goods') + '<small>До 6 фото. Первое фото встанет на витрину. Для «Куплю» можно без фото.</small>')}
-    ${field('Что продаёте или покупаете?', '<textarea name="title" maxlength="90" rows="2" placeholder="Например: мёд липовый, 3 литра"></textarea>')}
+    <h1>${buy ? 'Куплю' : 'Продаю'}</h1>
+    <input type="hidden" name="deal" value="${buy ? 'buy' : 'sell'}">
+    ${group('Фото', shotsField('goods') + `<small>${buy ? 'Можно без фото. С фото понятнее, что вы ищете.' : 'До 6 фото. Первое фото встанет на доску.'}</small>`)}
+    ${field(buy ? 'Что покупаете?' : 'Что продаёте?', `<textarea name="title" maxlength="90" rows="2" placeholder="${buy ? 'Например: сено, 20 тюков' : 'Например: мёд липовый, 3 литра'}"></textarea>`)}
     ${field('Цена', moneyInput('price', 'Пусто: договорная'))}
-    ${group('За что цена?', opts('unit', plain(GOODS_UNITS), false, ''))}
-    ${field('Подробнее', '<input name="note" maxlength="100" placeholder="Например: привезу по селу">', 'Можно не писать.')}
+    ${group('Категория', kinds(GOODS) + maybe)}
+    ${more(group('За что цена?', opts('unit', plain(GOODS_UNITS), false, ''))
+      + field('Подробнее', '<input name="note" maxlength="100" placeholder="Например: привезу по селу">', 'Можно не писать.'))}
     ${who()}
     <button class="btn btn-ink btn-wide">Отправить на проверку</button>
   </form>`;
@@ -131,6 +141,8 @@ export function pick(btn) {
 
 function bad(form, name, text) {
   const f = form.querySelector(`[name="${name}"]`).closest('.field');
+  // Поле с ошибкой за кнопкой «Изменить» или «Добавить подробности»: раскрыть, чтобы ошибку было видно
+  f.closest('details')?.setAttribute('open', '');
   f.classList.add('bad');
   f.querySelector('.err').textContent = text;
   return f;
@@ -152,14 +164,16 @@ function read(form, need) {
   return out;
 }
 const must = min => s => (clean(s, 200).length >= min ? clean(s, 200) : null);
+// Вид работ и категория не обязательны (решение автора 2026-11-01): без выбора «Другое»
+const kindOr = s => clean(s, 20) || 'drugoe';
 const any = max => s => clean(s, max);
 
 export async function submit(form) {
   const type = form.dataset.type;
   const need = {
-    requests: [['kind', must(1), 'Выберите вид работы.'], ['text', must(5), 'Напишите, что нужно сделать.'], ['budget', price], ['unit', any(20)], ['when', any(20)], ['place', any(40)]],
-    masters: [['kind', must(1), 'Выберите вид работ.'], ['title', must(5), 'Напишите, что вы делаете.'], ['from', s => s === '1'], ['price', price], ['unit', any(20)], ['note', any(60)]],
-    goods: [['deal', s => (s === 'buy' ? 'buy' : 'sell')], ['kind', must(1), 'Выберите категорию.'], ['title', must(3), 'Напишите, что продаёте или покупаете.'], ['price', price], ['unit', any(20)], ['note', any(100)]],
+    requests: [['kind', kindOr], ['text', must(5), 'Напишите, что нужно сделать.'], ['budget', price], ['unit', any(20)], ['when', any(20)], ['place', any(40)]],
+    masters: [['kind', kindOr], ['title', must(5), 'Напишите, что вы делаете.'], ['from', s => s === '1'], ['price', price], ['unit', any(20)], ['note', any(60)]],
+    goods: [['deal', s => (s === 'buy' ? 'buy' : 'sell')], ['kind', kindOr], ['title', must(3), 'Напишите, что продаёте или покупаете.'], ['price', price], ['unit', any(20)], ['note', any(100)]],
   }[type];
   const data = read(form, need);
   if (!data) return;

@@ -1,24 +1,28 @@
-// Доска: витрина услуг мастеров, работа от жителей, товары, страница мастера и товара, фильтр и поиск.
-import { icon, waIcon, phoneIcon, kindOf, kindsOf, plainName } from './icons.js';
-import { esc, ago, wa, priceText, payText } from './util.js';
+// Доска: одна лента по дням (решение автора 2026-11-01, образец docs/obrazcy/lenta.html). Услуги, работа и товары
+// вместе, новое сверху, группы «Сегодня», «Вчера», «30 октября». Без вкладок и рядов категорий: категории только в форме.
+// Ещё здесь страница мастера и товара и поиск
+import { icon, waIcon, phoneIcon, kindOf, plainName } from './icons.js';
+import { esc, ago, wa, priceText, payText, plural, dayName } from './util.js';
 import { $, photo, SIZES, watch } from './ui.js';
 import * as store from './store.js';
 
-export const state = { view: 'masters', kind: 'all', q: '' };
+export const state = { q: '' };
+const TYPES = ['masters', 'requests', 'goods'];
 const delay = i => `--d:${Math.min(i, 8) * 40}ms`;
 const lc = s => String(s || '').toLowerCase();
 // Плитки с фото: услуги и товары. Страница плитки: мастер #/m/, товар #/t/
 const PAGE = { masters: '#/m/', goods: '#/t/' };
-// «Куплю» в товарах: наклейка на фото, чтобы не спутать с продажей
-const buyTag = x => (x.deal === 'buy' ? '<span class="deal">Куплю</span>' : '');
+// Метка на фото: что это за объявление. «Куплю» лимонная, чтобы не спутать с продажей
+const tag = x => (x.type === 'masters' ? '<span class="tag">Услуга</span>'
+  : x.deal === 'buy' ? '<span class="tag buy">Куплю</span>' : '<span class="tag">Продаю</span>');
 
 function tile(m, i) {
-  const k = kindOf(state.view, m.kind);
+  const k = kindOf(m.type, m.kind);
   const n = m.photos?.length || 0;
   // Ценник: цена шрифтом Unbounded, единица мельче, чтобы ценник влез в узкую плитку
   const base = priceText(m), unit = priceText(m, true).slice(base.length);
-  return `<a class="tile fade-in" style="${delay(i)}" href="${PAGE[state.view]}${m.id}">
-    ${photo(m.photos?.[0], k, m.title, i ? SIZES.tile : SIZES.hero)}${buyTag(m)}<span class="price num">${esc(base)}${unit ? `<small>${esc(unit)}</small>` : ''}</span>${n > 1 ? `<span class="count">${n} фото</span>` : ''}</div>
+  return `<a class="tile fade-in" style="${delay(i)}" href="${PAGE[m.type]}${m.id}">
+    ${photo(m.photos?.[0], k, m.title, SIZES.tile)}${tag(m)}<span class="price num">${esc(base)}${unit ? `<small>${esc(unit)}</small>` : ''}</span>${n > 1 ? `<span class="count">${n} фото</span>` : ''}</div>
     <p class="tile-title">${esc(m.title)}</p>
     <p class="tile-who">${icon('ok')}${esc(m.name)} · ${lc(k.name)}</p>
   </a>`;
@@ -32,79 +36,54 @@ function reach(x, hello) {
   return `<a class="btn btn-ink" href="${wa(x.phone, hello)}" target="_blank" rel="noopener">${waIcon}WhatsApp</a>${call('btn-line')}`;
 }
 
+// Работа: карточка во всю ширину ленты
 function reqRow(r, i) {
   const k = kindOf('requests', r.kind);
   const hello = `Здравствуйте! Видел вашу работу на доске «Валарг»: ${r.text}.`;
   const shots = r.photos?.length ? `<div class="req-shots">${r.photos.map(p => photo(p, k, '', SIZES.thumb) + '</div>').join('')}</div>` : '';
-  return `<li class="req fade-in" style="${delay(i)}">
-    <div class="req-top"><p class="req-kind">${icon(k.id)}${k.name} · ${ago(r.at)}</p><b class="req-budget num">${esc(payText(r))}</b></div>
+  return `<div class="wide"><div class="req fade-in" style="${delay(i)}">
+    <div class="req-top"><p class="req-kind"><span class="pill">Работа</span>${icon(k.id)}${k.name} · ${ago(r.at)}</p><b class="req-budget num">${esc(payText(r))}</b></div>
     <h3>${esc(r.text)}</h3>
     ${r.when || r.place ? `<p class="req-meta">${r.when ? `<span>${icon('clock')}${esc(r.when)}</span>` : ''}${r.place ? `<span>${icon('pin')}${esc(r.place)}</span>` : ''}</p>` : ''}
     ${shots}
     <div class="req-acts">${reach(r, hello)}</div>
-  </li>`;
+  </div></div>`;
 }
 
-// Поиск по словам: что делает или продаёт, имя, вид работ или категория, текст работы
+// Поиск по словам: что делает или продаёт, имя, вид работ или категория, текст работы, «услуга», «работа», «куплю»
+const SAY = { masters: 'услуга', requests: 'работа', goods: 'товар продаю' };
 function match(x) {
-  if (state.kind !== 'all' && x.kind !== state.kind) return false;
   if (!state.q) return true;
-  const text = lc([x.title, x.text, x.name, x.note, x.deal === 'buy' ? 'куплю' : '', plainName(kindOf(state.view, x.kind))].join(' '));
+  const text = lc([x.title, x.text, x.name, x.note, x.deal === 'buy' ? 'куплю' : SAY[x.type], plainName(kindOf(x.type, x.kind))].join(' '));
   return lc(state.q).split(/\s+/).every(w => text.includes(w));
 }
-const items = () => store.board(state.view);
-
-export function renderKinds() {
-  const count = id => items().filter(x => id === 'all' || x.kind === id).length;
-  const chip = (id, name, ic) => {
-    const n = count(id);
-    return `<button class="chip" data-kind="${id}" aria-pressed="${state.kind === id}">${ic ? icon(id) : ''}${name}${n ? `<span class="n">${n}</span>` : ''}</button>`;
-  };
-  // Только виды, где есть объявления, в постоянном порядке. Выбранный остаётся, даже если опустел.
-  // Объявлений нет совсем: ряда нет
-  const used = kindsOf(state.view).filter(k => count(k.id) > 0 || state.kind === k.id);
-  $('#kinds').parentElement.hidden = !used.length;
-  $('#kinds').setAttribute('aria-label', state.view === 'goods' ? 'Категории товаров' : 'Виды работ');
-  $('#kinds').innerHTML = chip('all', 'Все', false) + used.map(k => chip(k.id, k.name, true)).join('');
-}
-
-// Пустой раздел: кнопка разместить своё
-const ADD = {
-  masters: ['#/razmestit/usluga', 'Предложить услугу'],
-  requests: ['#/razmestit/rabota', 'Предложить работу'],
-  goods: ['#/razmestit/tovar', 'Разместить товар'],
-};
+const items = () => TYPES.flatMap(t => store.board(t).map(x => ({ ...x, type: t }))).sort((a, b) => b.at - a.at);
 
 export function renderList() {
-  const isM = state.view !== 'requests';
   // Роботу ни объявлений, ни «Пока пусто»: в поиск идут заголовок, описание и подвал
-  if (store.robot) { $('#grid').hidden = $('#reqs').hidden = true; return; }
-  const list = items().filter(match);
-  const [href, label] = ADD[state.view];
+  if (store.robot) { $('#feed').hidden = true; return; }
+  const days = [];
+  items().filter(match).forEach(x => {
+    const name = dayName(x.at);
+    if (days.at(-1)?.name !== name) days.push({ name, list: [] });
+    days.at(-1).list.push(x);
+  });
   // Объявления ещё не пришли: «Загружаем», а не «Пока пусто». Иначе на слабой связи доска кажется пустой
-  const empty = !store.loaded() ? '<div class="empty"><p>Загружаем объявления.</p></div>'
-    : `<div class="empty"><p>${state.q || state.kind !== 'all' ? 'Ничего не нашлось.' : 'Пока пусто.'}</p>
-    <a class="btn btn-ink" href="${href}">${label}</a></div>`;
-  $('#grid').hidden = !isM;
-  $('#reqs').hidden = isM;
-  const box = isM ? $('#grid') : $('#reqs');
-  box.innerHTML = list.length ? list.map(isM ? tile : reqRow).join('') : (isM ? empty : `<li>${empty}</li>`);
-  watch(box);
-}
-
-export function pickKind(id) {
-  state.kind = id;
-  document.querySelectorAll('#kinds .chip').forEach(b => b.setAttribute('aria-pressed', b.dataset.kind === id));
-  renderList();
+  const empty = !store.loaded() ? '<p>Загружаем объявления.</p>'
+    : state.q ? '<p>Ничего не нашлось.</p>' : '<p>Пока пусто.</p><a class="btn btn-ink" href="#/razmestit">Разместить</a>';
+  $('#feed').innerHTML = days.length ? days.map(d => `<section>
+    <div class="day"><h2>${d.name}</h2><span>${d.list.length} ${plural(d.list.length, 'объявление', 'объявления', 'объявлений')}</span></div>
+    <div class="grid">${d.list.map((x, i) => (x.type === 'requests' ? reqRow : tile)(x, i)).join('')}</div>
+  </section>`).join('') : `<div class="empty">${empty}</div>`;
+  watch($('#feed'));
 }
 
 // Страница мастера (masters) или товара (goods): галерея, цена, связь
 export function itemPage(type, id) {
   const m = store.find(type, id);
-  const home = type === 'goods' ? ['#/tovary', 'К товарам'] : ['#/', 'К услугам'];
   // Объявления ещё не пришли: страница ждёт их (data-wait), app.js нарисует её заново
   if (!m && !store.loaded()) return '<div class="scr empty" data-wait><p>Загружаем объявление.</p></div>';
-  if (!m || m.status !== 'ok') return `<div class="scr empty"><p>Объявление снято с доски.</p><a class="btn btn-ink" href="${home[0]}">${home[1]}</a></div>`;
+  if (!m || m.status !== 'ok') return '<div class="scr empty"><p>Объявление снято с доски.</p><a class="btn btn-ink" href="#/">На доску</a></div>';
   const k = kindOf(type, m.kind);
   const shots = m.photos?.length ? m.photos : [null];
   const hello = type === 'masters' ? `Здравствуйте! Пишу с доски «Валарг». Нужна ваша услуга: ${m.title}.`
@@ -113,7 +92,7 @@ export function itemPage(type, id) {
   return `<article class="master">
     <div class="gal">
       <div class="gal-track" id="gal">${shots.map(p => photo(p, k, m.title, SIZES.gal) + '</div>').join('')}</div>
-      <a class="round" href="${home[0]}" data-act="back" aria-label="Назад">${icon('arrow')}</a>
+      <a class="round" href="#/" data-act="back" aria-label="Назад">${icon('arrow')}</a>
       ${shots.length > 1 ? `<span class="count" id="gal-n">1 / ${shots.length}</span>` : ''}
     </div>
     <div class="m-body">

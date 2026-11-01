@@ -47,7 +47,7 @@
 <link rel="stylesheet" href="css/forms.css">
 <script>document.documentElement.classList.add('js')</script>
 </head>
-<body data-view="masters">
+<body data-view="board">
 
 <header class="top" id="top">
   <a class="brand" href="#/">Валарг</a>
@@ -60,16 +60,14 @@
 <main>
   <section id="board">
     <div class="wrap page-head">
-      <h1 id="board-title">Услуги <em>мастеров</em></h1>
-      <p id="board-lead">Смотрите, как мастер уже сделал. Цена на фото.</p>
+      <h1>Доска <em>села</em></h1>
+      <p>Услуги, работа и товары от жителей. Новое сверху.</p>
       <label class="search" id="search" hidden>
         <svg class="i" viewBox="0 0 24 24"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-3.5-3.5"/></svg>
         <input id="q" type="search" placeholder="Например: ворота, мёд, проводка" aria-label="Поиск по доске" autocomplete="off">
       </label>
     </div>
-    <div class="chips-wrap"><div class="chips" id="kinds" role="toolbar" aria-label="Виды работ"></div></div>
-    <div class="wrap" data-nosnippet><div class="grid" id="grid"></div></div>
-    <div data-nosnippet><ul class="reqs" id="reqs" hidden></ul></div>
+    <div class="wrap feed" id="feed" data-nosnippet></div>
     <div class="wrap"><div class="install" id="install" hidden><p><b>Поставьте доску на телефон</b><span id="install-text">Значок на экране, как у приложения. Доска открывается одним касанием.</span></p><button class="btn btn-ink" id="install-btn">Установить</button></div></div>
     <div class="wrap foot">
       <p>Доска села Валарг (Валерик). Мастера показывают фото работ и цены: стройка и ремонт, сварка, электрика, сантехника, перевозки, такси, ремонт авто, техника, уборка, сад и огород, выпечка, шитьё, красота, учёба. Жители предлагают работу с оплатой. Товары: продукты, овощи и фрукты, скот и птица, корма, стройматериалы, авто и запчасти, телефоны, мебель, одежда, детское. Продаю и куплю. Объявления проверяет админ WhatsApp-группы «Валарг».</p>
@@ -82,9 +80,7 @@
 
 <nav class="tab" aria-label="Разделы">
   <a href="#/"></a>
-  <a href="#/rabota"></a>
   <a href="#/razmestit"></a>
-  <a href="#/tovary"></a>
   <a href="#/moi"></a>
 </nav>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
