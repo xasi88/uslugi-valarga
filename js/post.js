@@ -1,6 +1,6 @@
 // Экраны «Разместить» (услуга, работа, товар или объявление села) и «Отправлено».
 import { icon, waIcon, phoneIcon, KINDS, GOODS, NEWS } from './icons.js';
-import { esc, phone, phoneNice, price, clean, wa } from './util.js';
+import { esc, phone, phoneNice, price, clean, wa, UNITS } from './util.js';
 import { ADMIN_PHONE } from './config.js';
 import { $, reduce, toast, watch, photo } from './ui.js';
 import { shotsField, upload } from './photos.js';
@@ -35,7 +35,6 @@ const opts = (name, list, withIcons, value) => `<div class="pick${withIcons ? ' 
 const kinds = (list = KINDS) => opts('kind', list.map(k => [k.id, k.name]), true);
 // «Просто цена»: за всё сразу, без единицы. Есть во всех разделах и нажата сразу (решение автора 2026-10-31)
 const plain = list => [['', 'Просто цена'], ...list.map(u => [u, u])];
-const GOODS_UNITS = ['за штуку', 'за кг', 'за литр', 'за десяток', 'за мешок', 'за ящик', 'за метр', 'за м²', 'за м³', 'за голову'];
 const LABEL = { masters: 'Услуга', requests: 'Работа', goods: 'Товар', news: 'Объявление села' };
 const field = (label, input, hint = '') => `<label class="field"><span class="lbl">${label}</span>${input}${hint ? `<small>${hint}</small>` : ''}<em class="err"></em></label>`;
 const group = (label, inner) => `<fieldset class="field"><legend class="lbl">${label}</legend>${inner}<em class="err"></em></fieldset>`;
@@ -66,9 +65,9 @@ export function choiceScreen() {
     <h1>Разместить</h1>
     <p class="scr-lead">${store.adminHere() ? 'Вы вошли как админ: объявление сразу на доске, без проверки. Плитка синяя, с подписью «От админа».'
     : 'Бесплатно. Админ группы «Валарг» проверит объявление и выложит его на доску. Вам позвонят или напишут.'}</p>
-    ${row('#/razmestit/usluga', 'camera', 2, 'Предлагаю услугу', 'Покажите фото работ и цену.')}
-    ${row('#/razmestit/rabota', 'job', 3, 'Предлагаю работу', 'Опишите работу и оплату.')}
-    ${row('#/razmestit/prodayu', 'bag', 4, 'Продаю', 'Покажите товар и цену.')}
+    ${row('#/razmestit/usluga', 'camera', 2, 'Предлагаю услугу', 'Делаю работу за деньги: ремонт, сварка, такси, шитьё.')}
+    ${row('#/razmestit/rabota', 'job', 3, 'Нужен работник', 'Плачу человеку за работу: покрасить, помочь на стройке.')}
+    ${row('#/razmestit/prodayu', 'bag', 4, 'Продаю', 'Телефоны, техника, продукты, скот, одежда.')}
     ${row('#/razmestit/kuplyu', 'bag', 5, 'Куплю', 'Напишите, что ищете и за сколько.')}
     ${row('#/razmestit/obyavlenie', 'novost', 1, 'Объявление села', 'Новость, отключение, потеря или находка.')}
     ${adminLine('Вопрос по доске? Написать админу')}
@@ -78,12 +77,12 @@ export function choiceScreen() {
 export function requestForm() {
   return `<form class="scr form" data-type="requests" novalidate>
     ${back('#/razmestit')}
-    <h1>Предлагаю работу</h1>
+    <h1>Нужен работник</h1>
     ${field('Что нужно сделать?', '<textarea name="text" maxlength="200" rows="3" placeholder="Например: разгрузить машину кирпича"></textarea>')}
     ${field('Оплата', moneyInput('budget', 'Пусто: договорная'))}
     ${group('Фото', shotsField('requests') + '<small>Можно не добавлять. С фото понятнее, что за работа.</small>')}
     ${group('Вид работы', kinds() + maybe)}
-    ${more(group('За что оплата?', opts('unit', plain(['за работу', 'за день', 'за час', 'в месяц']), false, ''))
+    ${more(group('За что оплата?', opts('unit', plain(UNITS.requests), false, ''))
       + group('Когда?', opts('when', [['Сегодня', 'Сегодня'], ['Завтра', 'Завтра'], ['На этой неделе', 'На этой неделе'], ['Не срочно', 'Не срочно']]))
       + field('Улица', '<input name="place" maxlength="40" placeholder="Например: ул. Школьная">', 'Можно не писать.'))}
     ${who()}
@@ -99,7 +98,7 @@ export function masterForm() {
     ${field('Что вы делаете?', '<textarea name="title" maxlength="90" rows="2" placeholder="Например: ворота, заборы, навесы"></textarea>')}
     ${group('Цена', `<div class="seg" data-name="from"><button type="button" class="chip opt" data-v="1" aria-pressed="true">От</button><button type="button" class="chip opt" data-v="0" aria-pressed="false">Точно</button></div><input type="hidden" name="from" value="1">${moneyInput('price', 'Пусто: договорная')}`)}
     ${group('Вид работ', kinds() + maybe)}
-    ${more(group('За что цена?', opts('unit', plain(['за работу', 'за час', 'за метр', 'за м²', 'за рейс', 'за урок', 'за кг', 'за штуку']), false, ''))
+    ${more(group('За что цена?', opts('unit', plain(UNITS.masters), false, ''))
       + field('Подробнее', '<input name="note" maxlength="60" placeholder="Например: выезд в тот же день">', 'Можно не писать.'))}
     ${who()}
     <button class="btn btn-ink btn-wide">${sendLabel()}</button>
@@ -118,7 +117,7 @@ export function goodsForm(deal) {
     ${field(buy ? 'Что покупаете?' : 'Что продаёте?', `<textarea name="title" maxlength="90" rows="2" placeholder="${buy ? 'Например: сено, 20 тюков' : 'Например: мёд липовый, 3 литра'}"></textarea>`)}
     ${field('Цена', moneyInput('price', 'Пусто: договорная'))}
     ${group('Категория', kinds(GOODS) + maybe)}
-    ${more(group('За что цена?', opts('unit', plain(GOODS_UNITS), false, ''))
+    ${more(group('За что цена?', opts('unit', plain(UNITS.goods), false, ''))
       + field('Подробнее', '<input name="note" maxlength="100" placeholder="Например: привезу по селу">', 'Можно не писать.'))}
     ${who()}
     <button class="btn btn-ink btn-wide">${sendLabel()}</button>

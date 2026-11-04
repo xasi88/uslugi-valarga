@@ -146,6 +146,30 @@ export function fromRest(fields = {}) {
   return Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, val(v)]));
 }
 
+// Единицы цены в каждом разделе. «Просто цена» (пустая строка) есть везде
+export const UNITS = {
+  masters: ['за работу', 'за час', 'за метр', 'за м²', 'за рейс', 'за урок', 'за кг', 'за штуку'],
+  requests: ['за работу', 'за день', 'за час', 'в месяц'],
+  goods: ['за штуку', 'за кг', 'за литр', 'за десяток', 'за мешок', 'за ящик', 'за метр', 'за м²', 'за м³', 'за голову'],
+};
+const PHOTOS = { masters: 6, requests: 3, goods: 6 };
+
+// Перенос объявления в другой раздел («Исправить» в панели, 2026-11-04). x: объявление с полем type.
+// Владелец, номер, фото, дата и статус прежние. Чего в новом разделе нет, то пропадает:
+// у работы «когда» и «улица», у услуги «от», единица цены, которой в новом разделе нет
+export function moveFields(x, to, deal = 'sell') {
+  const what = clean(x.type === 'requests' ? x.text : x.title, 200);
+  const sum = (x.type === 'requests' ? x.budget : x.price) || 0;
+  const unit = UNITS[to].includes(x.unit) ? x.unit : '';
+  const note = clean(x.type === 'requests' ? '' : x.note, to === 'masters' ? 60 : 100);
+  const out = { kind: x.kind, name: x.name, phone: x.phone, photos: (x.photos || []).slice(0, PHOTOS[to]), at: x.at, status: x.status, owner: x.owner };
+  if (typeof x.wa === 'boolean') out.wa = x.wa;
+  if (x.admin) out.admin = true;
+  if (to === 'requests') return { ...out, text: what, budget: sum, unit, when: '', place: '' };
+  if (to === 'masters') return { ...out, title: what, price: sum, from: x.type === 'masters' && !!x.from, unit, note };
+  return { ...out, deal, title: what, price: sum, unit, note };
+}
+
 // Тетрадь доски board/all (ведёт почтальон, 2026-11-04): { built, ads: { 'раздел_номер': 'JSON объявления' } }.
 // Ответ: { masters: [...], requests: [...], goods: [...], news: [...] }. Тетради нет или ей больше 3 часов
 // (почтальон молчит): null, доска берёт объявления по-старому, из каждого раздела

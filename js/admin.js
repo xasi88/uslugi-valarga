@@ -6,6 +6,7 @@ import { CLOUDINARY, ADMIN_PHONE } from './config.js';
 import { $, toast } from './ui.js';
 import * as store from './store.js';
 import * as push from './push.js';
+import * as fix from './fix.js';
 import './install.js';
 
 let tab = 'wait';
@@ -56,7 +57,7 @@ function card(x) {
     ${x.admin ? '' : `<p class="a-who">${esc(x.name)} · ${x.wa === false
       ? `<a href="tel:+${x.phone}">${phoneIcon}${phoneNice(x.phone)}</a> · без WhatsApp`
       : `<a href="${wa(x.phone, 'Здравствуйте! Пишу как админ доски «Валарг».')}" target="_blank" rel="noopener">${waIcon}${phoneNice(x.phone)}</a>`}</p>`}
-    <div class="a-acts">${acts(x)}</div>
+    <div class="a-acts">${acts(x)}${fix.button(x)}</div>
   </li>`;
 }
 
@@ -101,12 +102,13 @@ async function sendNews(form) {
   btn.disabled = false;
 }
 document.addEventListener('submit', e => {
-  if (!e.target.matches('.a-form')) return;
+  if (!e.target.matches('.a-form:not(.a-fix)')) return;
   e.preventDefault();
   sendNews(e.target);
 });
 
 function render() {
+  if (fix.editing()) return;
   guardBox();
   newsBox();
   const lists = { wait: items('wait'), ok: items('ok'), off: items('off', 'no', 'done', 'old') };
@@ -132,6 +134,8 @@ document.addEventListener('click', e => {
   const a = e.target.closest('[data-a]');
   if (!a) return;
   const c = a.closest('.a-card');
+  // «Исправить»: форма в карточке, карточка не уезжает (fix.js)
+  if (a.dataset.a === 'fix') return fix.start(c, { ...store.find(c.dataset.type, c.dataset.id), type: c.dataset.type }, render);
   // «Удалить» стирает объявление из базы навсегда: и с доски, и из «Моих» у автора (решение автора 2026-10-30)
   if (a.dataset.a === 'del' && !confirm('Удалить объявление навсегда? Вернуть его не получится.')) return;
   const go = () => {

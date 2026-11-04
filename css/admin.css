@@ -62,3 +62,6 @@
 .ask-btns { display: flex; flex-wrap: wrap; gap: 8px; }
 .ask-btns > .btn { flex: 1 1 auto; padding: 0 14px; }
 @media (max-width: 420px) { .install { grid-template-columns: 1fr; } }
+
+/* «Исправить» (2026-11-04): форма внутри карточки объявления, без второй тени */
+.a-fix { margin-top: 0; background: var(--white); box-shadow: none; }

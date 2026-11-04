@@ -302,6 +302,15 @@ export async function adminNews(data) {
   await m.setDoc(ref, { ...data, admin: true, at: Date.now(), status: 'ok', owner: m.auth.currentUser.uid });
   return ref.id;
 }
+// «Исправить» в панели (2026-11-04): поля на месте или перенос в другой раздел одной записью (новое есть, старого нет)
+export const fixAd = (type, id, changes) => wake().then(m => m.updateDoc(m.doc(m.db, type, id), changes));
+export const moveAd = (type, id, to, data) => wake().then(m => {
+  const ref = m.doc(m.collection(m.db, to));
+  const b = m.writeBatch(m.db);
+  b.set(ref, data);
+  b.delete(m.doc(m.db, type, id));
+  return b.commit().then(() => ref.id);
+});
 // «Продлить»: снова на доске и наверху ленты. Правила базы пускают это только владельцу и только в конце срока
 export async function renew(type, id) {
   const m = await wake();
