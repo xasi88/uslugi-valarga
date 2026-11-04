@@ -149,6 +149,10 @@ body[data-view="master"] .tab, body[data-view="good"] .tab { display: none; }
 .install { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px 16px; margin-top: 32px; padding: 16px; border: var(--edge); border-radius: var(--r-card); background: var(--lemon-soft); color: var(--ink); box-shadow: var(--drop); }
 .install b { display: block; font-size: 17px; font-weight: 800; }
 .install span { display: block; margin-top: 2px; color: var(--ink-2); font-size: var(--fs-small); }
+/* Вопрос об уведомлениях наверху ленты: та же лимонная плашка, две кнопки рядом */
+.ask { margin-top: 16px; }
+.ask-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.ask-btns > .btn { flex: 1 1 auto; padding: 0 14px; }
 @media (max-width: 420px) { .install { grid-template-columns: 1fr; } }
 
 /* Подвал: «Написать админу» бумажной кнопкой, вход для админа мятной ссылкой */

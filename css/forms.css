@@ -85,6 +85,10 @@
 .set h2 { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; }
 .set h2 svg { width: 22px; height: 22px; }
 .set p { color: var(--ink-2); }
+/* Два вида уведомлений: подзаголовок, под ним текст и переключатель. Второй отделён чертой */
+.set h3 { font-size: 16px; font-weight: 800; }
+.set h3 + p { margin-top: -8px; }
+.set .set-pick + h3 { padding-top: 12px; border-top: var(--edge-thin); }
 .set-pick { display: flex; flex-wrap: wrap; gap: 10px; }
 .set .btn { justify-self: start; }
 .set .n { min-width: 24px; padding: 1px 7px; border-radius: var(--r-pill); background: var(--lemon); color: var(--ink); font-size: 12px; text-align: center; }

@@ -1,5 +1,6 @@
 // Экран «Настройки» (#/nastroyki, шестерёнка в шапке): звук, уведомления, админ, «Что нового».
-// Уведомления: доска открыта или свёрнута: подсказка, звук, уведомление телефона (tell).
+// Уведомления двух видов: новые объявления на доске (fresh, с 2026-11-04) и свои объявления (notify).
+// Свои: доска открыта или свёрнута: подсказка, звук, уведомление телефона (tell).
 // Доска закрыта: уведомление шлёт почтальон в Cloudflare (push.js, worker). Объявление, которое
 // поменялось, пока доска была закрыта, доска ещё раз показывает подсказкой при следующем открытии
 import { icon } from './icons.js';
@@ -33,6 +34,10 @@ export function settingsScreen() {
     <section class="set"><h2>${icon('sound')}Звук</h2>
       <p>Щелчок при нажатии, сигнал при отправке и уведомлении.</p>${pair('sound', p.sound, 'Включён', 'Выключен')}</section>
     <section class="set"><h2>${icon('bell')}Уведомления</h2>
+      <h3>Новые объявления</h3>
+      <p>На доске появилось новое объявление.</p>
+      ${pair('fresh', p.fresh, 'Включены', 'Выключены')}
+      <h3>Мои объявления</h3>
       <p>Ваше объявление выложено, не прошло проверку или снято с доски.${n === null ? '' : ' Админу: новое объявление на проверке.'}</p>
       ${pair('notify', p.notify, 'Включены', 'Выключены')}
       <p class="set-note">Приходят и когда доска закрыта. На iPhone: если доска поставлена на экран.</p></section>
@@ -52,18 +57,38 @@ export function adminChanged(n) {
 }
 
 // Переключатель: «Включены» у уведомлений сначала спрашивает разрешение телефона
+const OFF = { fresh: 'Уведомления о новых объявлениях выключены.', notify: 'Уведомления о своих объявлениях выключены.' };
 export async function toggle(btn) {
   const name = btn.dataset.pref, on = btn.dataset.on === '1';
-  if (name === 'notify' && on) {
+  if (OFF[name] && on) {
     if (!('Notification' in window)) return toast('На этом телефоне уведомления работают, когда доска поставлена на экран.');
     if (await Notification.requestPermission() !== 'granted') return toast('Уведомления запрещены. Разрешите их для valarg.ru в настройках браузера.');
   }
   setPref(name, on);
   btn.parentNode.querySelectorAll('[data-pref]').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.on === '1') === on)));
   if (name === 'sound' && on) sound.notify();
-  if (name !== 'notify') return;
-  if (!on) { push.off(); return toast('Уведомления выключены.'); }
-  toast(await push.on() ? 'Уведомления включены.' : 'Уведомления включены. При закрытой доске этот телефон их не примет.');
+  if (!OFF[name]) return;
+  if (!on) {
+    // Свои выключены, новые остаются: подписка живёт, адрес уходит только из базы
+    if (name === 'notify' && prefs().fresh) push.offMine(); else push.sync();
+    return toast(OFF[name]);
+  }
+  toast(await push.sync() ? 'Уведомления включены.' : 'Уведомления включены. При закрытой доске этот телефон их не примет.');
+}
+
+// «Сообщить, когда проверят» на экране «Отправлено»: лучший миг спросить, человек сам ждёт ответа
+export async function askMine(btn) {
+  if (await Notification.requestPermission() !== 'granted') return toast('Уведомления не разрешены. Что с объявлением, видно во вкладке «Мои».', 7000);
+  setPref('notify', true);
+  btn.remove();
+  toast(await push.sync() ? 'Готово. Доска скажет, когда объявление проверят.' : 'Доска скажет, когда объявление проверят, если она открыта.', 7000);
+}
+
+// Новое объявление, пока человек в окне доски (sw.js): звук и подсказка вместо уведомления телефона
+export function news(d) {
+  if (!prefs().fresh) return;
+  sound.notify();
+  toast(`${d.title}: ${d.body}`, 7000);
 }
 
 // Сказать человеку: звук и подсказка на экране, а при свёрнутой доске уведомление телефона

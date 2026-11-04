@@ -8,6 +8,7 @@ import * as store from './store.js';
 import { send } from './stats.js';
 import * as sound from './sound.js';
 import * as push from './push.js';
+import { prefs, chosen, setPref } from './prefs.js';
 
 const back = href => `<a class="back" href="${href}" aria-label="Назад">${icon('arrow')}</a>`;
 
@@ -124,6 +125,8 @@ export function doneScreen() {
     <span class="done-mark">${icon('clock')}</span>
     <h1>Отправлено админу</h1>
     <p class="scr-lead">Админ группы «Валарг» проверит объявление и выложит его на доску. Что с ним, видно во вкладке «Мои».</p>
+    ${'Notification' in window && 'PushManager' in window && Notification.permission === 'default' && !prefs().notify
+    ? '<button class="btn btn-ink btn-wide" data-act="notify-mine">Сообщить, когда проверят</button>' : ''}
     <a class="btn btn-ink btn-wide" href="#/moi">Мои объявления</a>
     <a class="btn btn-line btn-wide" href="#/">На доску</a>
     ${adminLine('Вопрос? Написать админу')}
@@ -193,6 +196,8 @@ export async function submit(form) {
       toast('Связь слабая. Объявление уйдёт, когда связь станет лучше.');
     });
     push.ping('new', type, item.id);
+    // Уведомления уже разрешены, а свои человек не выключал: доска скажет, когда объявление проверят
+    if (window.Notification?.permission === 'granted' && !chosen('notify')) { setPref('notify', true); push.sync(); }
     keepContact(data.name, data.phone, data.wa);
     send({ 'Объявления': { 'Отправили': LABEL[type] } });
     sound.sent();

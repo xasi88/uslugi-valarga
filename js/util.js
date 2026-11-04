@@ -125,3 +125,7 @@ export function fromRest(fields = {}) {
   };
   return Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, val(v)]));
 }
+
+// Вопрос «Сообщать о новых объявлениях?» (ask.js). s: { n: сколько раз ответили «Не сейчас», at: когда }.
+// Снова через 3 дня, всего не больше 3 раз: дальше вопрос не мешает, включить можно в настройках
+export const askDue = (s = {}, now = Date.now()) => (s.n || 0) < 3 && now - (s.at || 0) >= 3 * 864e5;

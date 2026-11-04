@@ -39,7 +39,7 @@
 <link rel="modulepreload" href="js/board.js"><link rel="modulepreload" href="js/post.js"><link rel="modulepreload" href="js/photos.js">
 <link rel="modulepreload" href="js/mine.js"><link rel="modulepreload" href="js/stats.js"><link rel="modulepreload" href="js/settings.js">
 <link rel="modulepreload" href="js/sound.js"><link rel="modulepreload" href="js/push.js"><link rel="modulepreload" href="js/prefs.js">
-<link rel="modulepreload" href="js/install.js"><link rel="modulepreload" href="js/versions.js">
+<link rel="modulepreload" href="js/install.js"><link rel="modulepreload" href="js/versions.js"><link rel="modulepreload" href="js/ask.js">
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@800;900&family=Manrope:wght@500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@800;900&family=Manrope:wght@500;600;700;800&display=swap"></noscript>
 <link rel="stylesheet" href="css/base.css">
@@ -67,6 +67,8 @@
         <input id="q" type="search" placeholder="Например: ворота, мёд, проводка" aria-label="Поиск по доске" autocomplete="off">
       </label>
     </div>
+    <!-- Вопрос «Сообщать о новых объявлениях?» (ask.js): виден, только пока человек не ответил -->
+    <div class="wrap" data-nosnippet><div class="install ask" id="ask" hidden><p><b id="ask-title">Сообщать о новых объявлениях?</b><span id="ask-text">Телефон подскажет, когда на доске появится новое. Выключить можно в настройках.</span></p><div class="ask-btns"><button class="btn btn-ink" id="ask-yes">Да, сообщать</button><button class="btn btn-line" id="ask-no">Не сейчас</button></div></div></div>
     <div class="wrap feed" id="feed" data-nosnippet></div>
     <div class="wrap"><div class="install" id="install" hidden><p><b>Поставьте доску на телефон</b><span id="install-text">Значок на экране, как у приложения. Доска открывается одним касанием.</span></p><button class="btn btn-ink" id="install-btn">Установить</button></div></div>
     <div class="wrap foot">

@@ -13,8 +13,8 @@ import * as stats from './stats.js';
 import * as settings from './settings.js';
 import * as sound from './sound.js';
 import * as push from './push.js';
-import { prefs } from './prefs.js';
 import './install.js';
+import './ask.js';
 
 // Адрес → экран и пункт меню
 const ROUTES = {
@@ -119,6 +119,7 @@ document.addEventListener('click', e => {
     store.setStatus(type, id, 'done');
     toast(type === 'goods' ? 'Объявление снято с доски.' : 'Объявление снято с доски. Хорошей работы!');
   }
+  if (a === 'notify-mine') settings.askMine(act);
   if (a === 'del' && confirm('Удалить объявление? Вернуть его не получится.')) store.remove(type, id);
   if (a === 'search') {
     const s = $('#search');
@@ -153,8 +154,14 @@ const toAdmin = $('#to-admin');
 toAdmin.href = post.toAdmin();
 toAdmin.insertAdjacentHTML('afterbegin', waIcon);
 
+// Служба приложения (sw.js): касание уведомления открывает экран (go), новое объявление при открытой доске (fresh)
+navigator.serviceWorker?.addEventListener('message', e => {
+  const { go, fresh } = e.data || {};
+  if (go?.startsWith('#/')) location.hash = go;
+  if (fresh) { store.pull(); settings.news(fresh); }
+});
+
 renderTab();
 route();
-// Уведомления включены: обновить адрес телефона в базе (адрес меняется, админ мог войти в панель).
-// Когда доска уже на экране: для этого грузится Firebase
-if (prefs().notify && window.Notification?.permission === 'granted') setTimeout(push.on, 2500);
+// Уведомления включены: обновить подписку и адрес телефона, когда доска уже на экране
+push.start();

@@ -166,6 +166,9 @@ else if (!robot) {
   if (['uv-last', 'uv-last-goods', 'uv-contact', 'uv-admin'].some(has)) setTimeout(() => wake().catch(() => {}), 2500);
 }
 
+// Взять свежие объявления сейчас (пришло уведомление «Новое на доске»). С Firebase их приносит подписка
+export const pull = () => { if (!f && !robot && !isPanel) refresh(fetchBoard()); };
+
 export const board = type => list(type).filter(x => x.status === 'ok');
 export const find = (type, id) => list(type).find(x => x.id === id);
 export const all = list;
