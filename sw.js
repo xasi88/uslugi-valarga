@@ -3,13 +3,13 @@
 // версию, без сети берётся копия. Объявления не копируются: их держит база Firebase.
 // Хранилище копий общее у всех сайтов адреса: служба удаляет только свои копии (имя с PREFIX).
 const PREFIX = 'uslugi-valarga-';
-const CACHE = PREFIX + 'v9';
+const CACHE = PREFIX + 'v10';
 const SHELL = [
   '/', '/admin/', '/manifest.webmanifest', '/admin/manifest.webmanifest',
   '/css/base.css', '/css/site.css', '/css/forms.css', '/css/admin.css',
   '/js/app.js', '/js/admin.js', '/js/board.js', '/js/config.js', '/js/fb.js', '/js/icons.js', '/js/install.js',
   '/js/mine.js', '/js/photos.js', '/js/post.js', '/js/stats.js', '/js/store.js', '/js/ui.js', '/js/util.js',
-  '/js/prefs.js', '/js/push.js', '/js/settings.js', '/js/sound.js', '/js/versions.js', '/js/first.js', '/js/ask.js',
+  '/js/prefs.js', '/js/push.js', '/js/settings.js', '/js/sound.js', '/js/versions.js', '/js/first.js', '/js/ask.js', '/js/share.js',
   '/img/icon.svg', '/img/icon-192.png', '/img/admin-192.png',
 ];
 

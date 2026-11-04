@@ -61,8 +61,6 @@ body { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 .day h2 { color: var(--paper); }
 .day span { color: var(--mint); font-size: var(--fs-small); font-weight: 700; }
 .feed .empty { margin-top: 18px; }
-/* Работа в ленте: карточка во всю ширину сетки */
-.wide { grid-column: 1 / -1; }
 
 /* Сетка объявлений: наклейки. Соседние чуть повёрнуты в разные стороны */
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 14px; padding: 10px 0 12px; }
@@ -92,35 +90,24 @@ body { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 /* Метка на фото: «Услуга», «Продаю» бумажные, «Куплю» лимонная, чтобы не спутать с продажей */
 .tag { position: absolute; z-index: 1; left: 8px; top: 8px; padding: 3px 10px; border: var(--edge-thin); border-radius: var(--r-pill); background: var(--paper); color: var(--ink); font-size: 12px; font-weight: 800; }
 .tag.buy { background: var(--lemon); }
+.tag.work { background: var(--mint); }
 .tile-title { padding: 4px 4px 0; font-weight: 800; font-size: 15px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .tile-who { display: flex; align-items: center; gap: 6px; margin-top: -4px; padding: 0 4px; font-size: var(--fs-cap); font-weight: 700; color: var(--ink-2); }
 .tile-who svg { width: 15px; height: 15px; color: var(--emerald); stroke-width: 3; }
 .empty { grid-column: 1 / -1; display: grid; gap: 14px; justify-items: start; padding: 20px; border: var(--edge); border-radius: var(--r-card); background: var(--paper); color: var(--ink-2); box-shadow: var(--drop); font-weight: 700; }
 
-/* Работа: наклейки ровно, без наклона: в них много текста. Метка «Работа» бумажной пилюлей */
-.pill { padding: 3px 10px; border: var(--edge-thin); border-radius: var(--r-pill); background: var(--paper); color: var(--ink); font-size: 12px; font-weight: 800; }
-/* Карточка работы не шире экрана: столбец не растёт от длинного текста, оплата уходит на новую строку (2026-10-31) */
-.req { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 16px; border: var(--edge); border-radius: var(--r-card); background: var(--paper); color: var(--ink); box-shadow: var(--drop); }
-.req-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 12px; }
-.req-kind { display: flex; align-items: center; gap: 6px; font-size: var(--fs-small); font-weight: 700; color: var(--ink-2); }
-.req-kind svg { width: 18px; height: 18px; }
-.req-budget { padding: 4px 10px; border: var(--edge-thin); border-radius: var(--r-sm); background: var(--coral); box-shadow: var(--drop-sm); rotate: 2deg; font: 800 15px/1.2 var(--font-display); }
-.req h3 { font-size: 18px; }
+/* Работа на своей странице: когда и где */
 .req-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: var(--fs-small); font-weight: 700; color: var(--ink-2); }
 .req-meta span { display: inline-flex; align-items: center; gap: 5px; }
 .req-meta svg { width: 16px; height: 16px; }
-.req-shots { display: flex; gap: 8px; }
-.req-shots .ph { width: 72px; height: 72px; border: var(--edge-thin); border-radius: var(--r-sm); cursor: zoom-in; }
 .gal-track .ph { cursor: zoom-in; }
 /* Фото на весь экран: касание закрывает */
 .viewer { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 16px; background: var(--ink); cursor: zoom-out; }
 .viewer img { width: 100%; height: calc(100dvh - 32px); object-fit: contain; }
 .viewer .round { position: absolute; top: calc(12px + env(safe-area-inset-top)); right: 12px; }
-/* Связь: WhatsApp и «Позвонить» поровну. Нет WhatsApp: одна кнопка на всю ширину */
-.req-acts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 4px; }
-/* Две кнопки связи рядом, на очень узком экране одна под другой */
-.req-acts .btn, .m-bar .btn { padding: 0 14px; }
-.req-acts > :only-child, .m-bar > :only-child { grid-column: 1 / -1; }
+/* Связь: WhatsApp и «Позвонить» поровну, на очень узком экране одна под другой. Нет WhatsApp: одна кнопка на всю ширину */
+.m-bar .btn { padding: 0 14px; }
+.m-bar > :only-child { grid-column: 1 / -1; }
 
 /* Страница мастера: фото наклейкой, листаются пальцем, ниже карточка и кнопки */
 .master { max-width: var(--page-text); margin: 0 auto; }
@@ -138,13 +125,14 @@ body { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 .m-note { font-size: var(--fs-lead); font-weight: 600; }
 .m-date { font-size: var(--fs-cap); font-weight: 600; color: var(--ink-3); }
 .share { justify-self: start; margin-top: 4px; }
+.share svg { width: 20px; height: 20px; }
 .m-bar {
   position: fixed; z-index: 25; left: 0; right: 0; bottom: 0;
   display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;
   padding: 12px max(16px, calc((100% - var(--page-text)) / 2 + 16px)) calc(14px + env(safe-area-inset-bottom));
   background: var(--paper); border-top: var(--edge);
 }
-body[data-view="master"] .tab, body[data-view="good"] .tab { display: none; }
+body[data-view="master"] .tab, body[data-view="good"] .tab, body[data-view="work"] .tab { display: none; }
 
 /* «Установить»: лимонная наклейка над подвалом, видна, только если браузер умеет ставить приложение */
 .install { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px 16px; margin-top: 32px; padding: 16px; border: var(--edge); border-radius: var(--r-card); background: var(--lemon-soft); color: var(--ink); box-shadow: var(--drop); }

@@ -13,6 +13,7 @@ import * as stats from './stats.js';
 import * as settings from './settings.js';
 import * as sound from './sound.js';
 import * as push from './push.js';
+import * as sharing from './share.js';
 import './install.js';
 import './ask.js';
 
@@ -28,8 +29,8 @@ const ROUTES = {
   '#/moi': ['mine', 2, mineScreen],
   '#/nastroyki': ['settings', -1, settings.settingsScreen],
 };
-// Страница плитки: мастер (#/m/<номер>) или товар (#/t/<номер>) и собрание в базе
-const PAGES = { m: ['master', 'masters'], t: ['good', 'goods'] };
+// Страница плитки: мастер (#/m/<номер>), товар (#/t/<номер>) или работа (#/r/<номер>, с 2026-11-04) и собрание в базе
+const PAGES = { m: ['master', 'masters'], t: ['good', 'goods'], r: ['work', 'requests'] };
 // Старые адреса: ссылки из WhatsApp ведут на доску и в ту же форму
 ROUTES['#/rabota'] = ROUTES['#/tovary'] = ROUTES['#/zayavki'] = ROUTES['#/'];
 ROUTES['#/razmestit/zayavka'] = ROUTES['#/razmestit/rabota'];
@@ -42,7 +43,7 @@ let booted = false;
 let current = null;
 function route() {
   const h = location.hash || '#/';
-  const m = h.match(/^#\/([mt])\/([\w-]+)$/);
+  const m = h.match(/^#\/([mtr])\/([\w-]+)$/);
   const page = m && PAGES[m[1]];
   const [view, tabI, screen] = page ? [page[0], 0, () => board.itemPage(page[1], m[2])] : ROUTES[h] || ROUTES['#/'];
   const prev = document.body.dataset.view;
@@ -109,7 +110,7 @@ document.addEventListener('click', e => {
   if (opt) { post.pick(opt); return; }
   const shot = t.closest('[data-shot]');
   if (shot) { removeShot(shot.closest('form'), +shot.dataset.shot); return; }
-  const big = t.closest('.req-shots [data-photo], .gal-track [data-photo]');
+  const big = t.closest('.gal-track [data-photo]');
   if (big) { viewPhoto(big.dataset.photo); return; }
   const act = t.closest('[data-act]');
   if (!act) return;
@@ -120,6 +121,7 @@ document.addEventListener('click', e => {
     toast(type === 'goods' ? 'Объявление снято с доски.' : 'Объявление снято с доски. Хорошей работы!');
   }
   if (a === 'notify-mine') settings.askMine(act);
+  if (a === 'share') sharing.share(act);
   if (a === 'renew') {
     act.disabled = true;
     store.renew(type, id).then(() => toast('Готово: объявление снова на доске, наверху ленты.'),

@@ -45,7 +45,6 @@ document.addEventListener('click', e => {
   if (!a) return;
   const h = a.getAttribute('href');
   if (a.matches('.to-admin, #to-admin')) send({ 'Связь': { 'Написать админу': where() } });
-  else if (a.matches('.share')) send({ 'Связь': { 'Переслать': where() } });
   else if (h.startsWith('https://wa.me/')) send({ 'Связь': { 'WhatsApp': where() } });
   else if (h.startsWith('tel:')) send({ 'Связь': { 'Позвонить': where() } });
 }, true);
