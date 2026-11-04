@@ -234,6 +234,14 @@ export const LIFE = { masters: 90, requests: 30, goods: 30, news: 1 };
 export const RENEW = 5;
 const early = type => (type === 'news' ? 0 : RENEW);
 // Сколько дней осталось на доске, с неполным днём: только что выложено 30, меньше суток 1, срок вышел 0
+// Причины жалобы (решение автора 2026-11-04, report.js). Те же коды в правилах базы (reports)
+export const REASONS = [['lie', 'Обман'], ['old', 'Уже неактуально'], ['wrong', 'Неверная цена или раздел'],
+  ['rude', 'Грубость или запрещённое'], ['other', 'Другое']];
+export const reasonName = v => REASONS.find(([k]) => k === v)?.[1] || 'Другое';
+
+// Время объявления (версия 3.2): его ставит база (serverTimestamp), телефон не может его подделать.
+// Firebase отдаёт его объектом Timestamp, у старых объявлений число миллисекунд. Экраны везде видят число
+export const msOf = v => (typeof v?.toMillis === 'function' ? v.toMillis() : v);
 export const daysLeft = (type, at, now = Date.now()) => Math.max(0, Math.ceil((at + LIFE[type] * 864e5 - now) / 864e5));
 export const canRenew = (x, type, now = Date.now()) => x.status === 'old'
   || (x.status === 'ok' && now - x.at > (LIFE[type] - early(type)) * 864e5);

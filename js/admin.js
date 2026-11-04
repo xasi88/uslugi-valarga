@@ -1,7 +1,7 @@
 // Панель админа: проверка новых объявлений, снятие с доски, объявления от админа (с 2026-11-04).
 // Классы панели начинаются с a-. Данные через store.js, как у доски.
 import { icon, waIcon, phoneIcon, kindOf, NEWS } from './icons.js';
-import { esc, ago, wa, phoneNice, photoUrl, priceText as cost, payText, clean, canRenew } from './util.js';
+import { esc, ago, wa, phoneNice, photoUrl, priceText as cost, payText, clean, canRenew, msOf, reasonName } from './util.js';
 import { CLOUDINARY, ADMIN_PHONE } from './config.js';
 import { $, toast } from './ui.js';
 import * as store from './store.js';
@@ -9,7 +9,8 @@ import * as push from './push.js';
 import * as fix from './fix.js';
 import './install.js';
 
-let tab = 'wait';
+// Уведомление о жалобе открывает панель сразу на вкладке «Жалобы» (адрес /admin/#zhaloby)
+let tab = location.hash === '#zhaloby' ? 'rep' : 'wait';
 
 const priceText = x => (x.type === 'news' ? '' : x.type === 'requests' ? payText(x) : cost(x) + (x.price && x.unit ? ' ' + x.unit : ''));
 
@@ -42,7 +43,8 @@ function acts(x) {
   return (BACK[x.status] ? `<button class="btn a-ok" data-a="ok">${icon('ok')}${BACK[x.status]}</button>` : '') + DEL;
 }
 
-function card(x) {
+// rep: жалобы на объявление (вкладка «Жалобы»). Тогда в карточке «Снять с доски» и «Оставить»
+function card(x, rep = '') {
   const k = kindOf(x.type, x.kind);
   const isReq = x.type === 'requests' || x.type === 'news';
   const facts = [
@@ -57,8 +59,41 @@ function card(x) {
     ${x.admin ? '' : `<p class="a-who">${esc(x.name)} · ${x.wa === false
       ? `<a href="tel:+${x.phone}">${phoneIcon}${phoneNice(x.phone)}</a> · без WhatsApp`
       : `<a href="${wa(x.phone, 'Здравствуйте! Пишу как админ доски «Валарг».')}" target="_blank" rel="noopener">${waIcon}${phoneNice(x.phone)}</a>`}</p>`}
-    <div class="a-acts">${acts(x)}${fix.button(x)}</div>
+    ${rep}<div class="a-acts">${rep ? '<button class="btn btn-danger" data-a="off">Снять с доски</button><button class="btn a-ok" data-a="keep">Оставить</button>' : acts(x)}${fix.button(x)}</div>
   </li>`;
+}
+
+// Жалобы (решение автора 2026-11-04): житель жалуется со страницы объявления (report.js). Читает их только админ,
+// поэтому подписка после входа. Сбой (вышел из панели): подписка снова при следующем входе
+let reps = [];
+let watching = false;
+function watchReports() {
+  if (watching) return;
+  watching = true;
+  store.wake().then(m => m.onSnapshot(m.collection(m.db, 'reports'), s => {
+    reps = s.docs.map(d => { const x = d.data({ serverTimestamps: 'estimate' }); return { ...x, at: msOf(x.at), rid: d.id }; });
+    render();
+  }, () => { watching = false; reps = []; }));
+}
+// «Оставить» или «Снять с доски»: жалобы на это объявление больше не нужны
+const clearReps = (t, id) => store.wake().then(m => {
+  const b = m.writeBatch(m.db);
+  reps.filter(r => r.t === t && r.id === id).forEach(r => b.delete(m.doc(m.db, 'reports', r.rid)));
+  return b.commit();
+});
+// Жалобы по объявлениям, свежие сверху
+function groups() {
+  const g = new Map();
+  reps.forEach(r => { const k = r.t + '_' + r.id; g.set(k, [...(g.get(k) || []), r]); });
+  return [...g.values()].map(list => ({ t: list[0].t, id: list[0].id, list, at: Math.max(...list.map(r => r.at || 0)) }))
+    .sort((a, b) => b.at - a.at);
+}
+function repCard(g) {
+  const x = store.find(g.t, g.id);
+  const why = `<ul class="a-rep">${g.list.map(r => `<li><b>Жалоба:</b> ${reasonName(r.why)}${r.note ? '. ' + esc(r.note) : ''} · ${ago(r.at)}</li>`).join('')}</ul>`;
+  if (x?.status === 'ok') return card({ ...x, type: g.t }, why);
+  return `<li class="a-card" data-type="${g.t}" data-id="${g.id}"><h3>Объявления уже нет на доске</h3>${why}
+    <div class="a-acts"><button class="btn a-ok" data-a="keep">Убрать жалобы</button></div></li>`;
 }
 
 // Защита от спама: одно объявление в сутки. Админ включает и выключает её здесь
@@ -111,13 +146,13 @@ function render() {
   if (fix.editing()) return;
   guardBox();
   newsBox();
-  const lists = { wait: items('wait'), ok: items('ok'), off: items('off', 'no', 'done', 'old') };
-  const names = { wait: 'Проверка', ok: 'На доске', off: 'Снятые' };
+  const lists = { wait: items('wait'), ok: items('ok'), off: items('off', 'no', 'done', 'old'), rep: groups() };
+  const names = { wait: 'Проверка', ok: 'На доске', off: 'Снятые', rep: 'Жалобы' };
   $('#a-tabs').innerHTML = Object.keys(names).map(k =>
     `<button class="chip" role="tab" data-tab="${k}" aria-pressed="${tab === k}">${names[k]} <b>${lists[k].length}</b></button>`).join('');
   const list = lists[tab];
-  const empty = { wait: 'Новых объявлений нет. Всё проверено.', ok: 'На доске пока пусто.', off: 'Снятых объявлений нет.' };
-  $('#a-list').innerHTML = list.length ? list.map(card).join('') : `<li class="a-empty">${empty[tab]}</li>`;
+  const empty = { wait: 'Новых объявлений нет. Всё проверено.', ok: 'На доске пока пусто.', off: 'Снятых объявлений нет.', rep: 'Жалоб нет.' };
+  $('#a-list').innerHTML = list.length ? list.map(x => (tab === 'rep' ? repCard(x) : card(x))).join('') : `<li class="a-empty">${empty[tab]}</li>`;
 }
 
 document.addEventListener('click', e => {
@@ -146,6 +181,11 @@ document.addEventListener('click', e => {
     if (a.dataset.a === 'off') { store.setStatus(c.dataset.type, c.dataset.id, 'off').then(tell); toast('Объявление снято с доски. Автор увидит это в «Моих».'); }
     // Удалено или продлено: почтальон только правит тетрадь доски, уведомлений нет
     const book = () => push.ping('board', c.dataset.type, c.dataset.id);
+    // Вкладка «Жалобы»: решение принято, жалобы на объявление убираются
+    if (tab === 'rep' && (a.dataset.a === 'off' || a.dataset.a === 'keep')) {
+      clearReps(c.dataset.type, c.dataset.id).catch(() => toast('Жалобы не убраны. Проверьте связь.'));
+      if (a.dataset.a === 'keep') toast('Жалобы убраны.');
+    }
     if (a.dataset.a === 'del') { store.remove(c.dataset.type, c.dataset.id).then(book); toast('Объявление удалено из базы.'); }
     if (a.dataset.a === 'renew') {
       store.renew(c.dataset.type, c.dataset.id).then(() => { book(); toast('Объявление снова на доске, наверху ленты.'); },
@@ -169,8 +209,9 @@ function gate() {
   $('#a-guard').hidden = $('#a-news').hidden = $('#a-tabs').hidden = $('#a-list').hidden = s !== 'in';
   $('#a-login-text').textContent = GATE[s] || '';
   $('#a-login-btn').hidden = s === 'checking';
-  if (s === 'in') render();
+  if (s === 'in') { watchReports(); render(); }
 }
+navigator.serviceWorker?.addEventListener('message', e => { if (e.data?.go === '#zhaloby') { tab = 'rep'; render(); } });
 $('#a-login-btn').addEventListener('click', async () => {
   if (store.adminState() === 'denied') await store.signOutAdmin();
   store.signIn();

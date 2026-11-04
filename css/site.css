@@ -138,6 +138,10 @@ body { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 .m-date { font-size: var(--fs-cap); font-weight: 600; color: var(--ink-3); }
 .share { justify-self: start; margin-top: 4px; }
 .share svg { width: 20px; height: 20px; }
+/* «Пожаловаться» (2026-11-04): подчёркнутое слово, как «Изменить» в форме. Касание 44 px */
+.rep-link { justify-self: start; min-height: 44px; padding: 0 2px; border: 0; background: none; color: var(--ink-2); font: 700 var(--fs-small)/1 var(--font); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.rep-why { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.rep-why .chip { justify-content: flex-start; min-width: 0; white-space: normal; text-align: left; }
 .m-bar {
   position: fixed; z-index: 25; left: 0; right: 0; bottom: 0;
   display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;

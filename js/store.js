@@ -7,7 +7,7 @@
 // Скорость (2026-11-01): доска сразу показывает объявления из памяти телефона, потом берёт свежие
 // лёгким запросом (first.js). Тяжёлый Firebase (fb.js) грузится, только когда он нужен: wake()
 import { toast } from './ui.js';
-import { nextTime, isBot, sent, fromBook } from './util.js';
+import { nextTime, isBot, sent, fromBook, msOf } from './util.js';
 import { firstBoard, fetchBoard } from './first.js';
 
 // Поисковый робот видит витрину без объявлений: имена и номера жителей не попадают в поиск (решение автора 2026-10-30)
@@ -48,7 +48,8 @@ export const wake = () => (waking ||= import('./fb.js').then(m => { f = m; start
 
 function listen(type, name, q, onError) {
   return f.onSnapshot(q, snap => {
-    parts[type][name] = new Map(snap.docs.map(d => [d.id, { ...d.data(), id: d.id }]));
+    // Время базы, пока она его не подтвердила: примерное время телефона (estimate)
+    parts[type][name] = new Map(snap.docs.map(d => { const x = d.data({ serverTimestamps: 'estimate' }); return [d.id, { ...x, at: msOf(x.at), id: d.id }]; }));
     if (panel === 'checking') { panel = 'in'; mark('uv-admin', true); }
     if (name === 'board') { ready = true; keep(); }
     changed();
@@ -219,7 +220,7 @@ const why = e => (e?.code !== 'permission-denied'
   ? 'Нет связи с интернетом. Попробуйте ещё раз.'
   : guard ? 'Одно объявление в сутки. С этого номера сегодня уже отправляли. Попробуйте завтра.'
     : 'База не приняла запись. Проверьте поля и попробуйте ещё раз.');
-async function user() {
+export async function user() {
   const { auth, signInAnonymously } = await wake();
   await auth.authStateReady();
   return auth.currentUser || (await signInAnonymously(auth)).user;
@@ -232,13 +233,13 @@ export const adminHere = () => has('uv-admin');
 // и без защиты от спама. Пишет вход панели (права админа), владелец: вход жителя на этом телефоне.
 // Так объявление видно в «Моих», его можно продлить и снять, как у всех
 async function asAdmin(type, data, u, onSlow) {
-  const { adminDb, adminAuth, doc, collection, setDoc } = f;
+  const { adminDb, adminAuth, doc, collection, setDoc, serverTimestamp } = f;
   await adminAuth.authStateReady();
   if (!adminAuth.currentUser) return null;
   const ref = doc(collection(adminDb, type));
-  const item = { ...data, admin: true, at: Date.now(), status: 'ok', owner: u.uid };
-  await sent(setDoc(ref, item), onSlow);
-  return { ...item, id: ref.id };
+  const item = { ...data, admin: true, status: 'ok', owner: u.uid };
+  await sent(setDoc(ref, { ...item, at: serverTimestamp() }), onSlow);
+  return { ...item, at: Date.now(), id: ref.id };
 }
 
 // Новое объявление ждёт проверки админа. Объявление самого админа сразу на доске (status ok).
@@ -255,7 +256,8 @@ export async function add(type, data, onSlow = () => {}) {
     }
     const { db, doc, collection, writeBatch, serverTimestamp } = f;
     const ref = doc(collection(db, type));
-    item = { ...data, at: Date.now(), status: 'wait', owner: u.uid };
+    // Время ставит база (версия 3.2): правила не примут время телефона
+    item = { ...data, status: 'wait', owner: u.uid };
     // В той же записи отметка времени для телефона и для номера: по ним база считает сутки.
     // t и id: где лежит объявление. Без объявления на этот номер база не ставит отметку номера.
     // У товаров (g) и объявлений села (n) отметки свои: они не мешают услуге или работе в тот же день
@@ -264,8 +266,9 @@ export async function add(type, data, onSlow = () => {}) {
     const g = group(type);
     b.set(doc(db, 'limits', g + 'u_' + u.uid), stamp);
     b.set(doc(db, 'limits', g + 'p_' + data.phone), stamp);
-    b.set(ref, item);
+    b.set(ref, { ...item, at: serverTimestamp() });
     await sent(b.commit(), onSlow);
+    item.at = Date.now();
     item.id = ref.id;
   } catch (e) { throw new Error(why(e)); }
   try { localStorage.setItem(lastKey(type), String(item.at)); } catch { /* не страшно */ }
@@ -299,7 +302,7 @@ export const remove = (type, id) => quiet(m => m.deleteDoc(m.doc(m.db, type, id)
 export async function adminNews(data) {
   const m = await wake();
   const ref = m.doc(m.collection(m.db, 'news'));
-  await m.setDoc(ref, { ...data, admin: true, at: Date.now(), status: 'ok', owner: m.auth.currentUser.uid });
+  await m.setDoc(ref, { ...data, admin: true, at: m.serverTimestamp(), status: 'ok', owner: m.auth.currentUser.uid });
   return ref.id;
 }
 // «Исправить» в панели (2026-11-04): поля на месте или перенос в другой раздел одной записью (новое есть, старого нет)
@@ -314,7 +317,7 @@ export const moveAd = (type, id, to, data) => wake().then(m => {
 // «Продлить»: снова на доске и наверху ленты. Правила базы пускают это только владельцу и только в конце срока
 export async function renew(type, id) {
   const m = await wake();
-  await m.updateDoc(m.doc(m.db, type, id), { status: 'ok', at: Date.now() });
+  await m.updateDoc(m.doc(m.db, type, id), { status: 'ok', at: m.serverTimestamp() });
 }
 
 // Вход админа в панели: out (не вошёл), checking (проверяем), in (админ), denied (чужая почта)

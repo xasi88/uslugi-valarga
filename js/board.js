@@ -164,6 +164,7 @@ export function itemPage(type, id) {
       ${x.note ? `<p class="m-note">${esc(x.note)}</p>` : ''}
       <p class="m-date">Размещено ${ago(x.at)}</p>
       <button class="btn btn-line share" type="button" data-act="share" data-type="${type}" data-id="${x.id}">${icon('share')}Поделиться</button>
+      <button class="rep-link" type="button" data-act="report" data-type="${type}" data-id="${x.id}">Пожаловаться</button>
     </div>
     <div class="m-bar">${reach(x, hello(type, x))}</div>
   </article>`;

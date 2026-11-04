@@ -130,6 +130,8 @@ document.addEventListener('click', e => {
   }
   if (a === 'notify-mine') settings.askMine(act);
   if (a === 'share') sharing.share(act);
+  // «Пожаловаться» (2026-11-04): окно жалобы грузится, только когда оно нужно
+  if (a === 'report') import('./report.js').then(m => m.open(type, id), () => toast('Нет связи с интернетом. Попробуйте ещё раз.'));
   if (a === 'update') settings.checkUpdate(act);
   // «Установить» в «Настройках» и на экране «Как установить»: окно установки браузера
   if (a === 'install') install.promptInstall('Кнопка «Установить»').then(ok => ok && toast('Готово: значок «Валарг» на экране.', 5000));

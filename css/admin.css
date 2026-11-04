@@ -43,6 +43,10 @@
 .a-who svg { width: 18px; height: 18px; fill: currentColor; }
 .a-acts { display: flex; flex-wrap: wrap; gap: 10px; }
 .a-acts .btn { flex: 1 1 140px; }
+/* Жалобы на объявление (2026-11-04): белая карточка с контуром, слово «Жалоба» красным, как «Удалить» */
+.a-rep { display: grid; gap: 6px; margin: 0; padding: 10px 14px; list-style: none; border: var(--edge-thin); border-radius: var(--r-sm); background: var(--white); font-size: var(--fs-small); }
+.a-rep b { color: var(--danger); }
+.a-rep li { overflow-wrap: anywhere; }
 .a-ok { background: var(--emerald); color: var(--paper); }
 @media (hover: hover) { .a-ok:hover { background: var(--emerald-deep); } }
 .a-empty { padding: 28px 18px; border: var(--edge); border-radius: var(--r-card); background: var(--paper); color: var(--ink-2); box-shadow: var(--drop); font-weight: 700; }
