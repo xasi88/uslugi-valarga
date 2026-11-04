@@ -1,13 +1,15 @@
 // Доска: одна лента по дням (решение автора 2026-11-01, образец docs/obrazcy/lenta.html). Услуги, работа и товары
-// вместе, новое сверху, группы «Сегодня», «Вчера», «30 октября». Без вкладок и рядов категорий: категории только в форме.
+// вместе, новое сверху, группы «Сегодня», «Вчера», «30 октября». Без вкладок и рядов категорий: раздел и категорию
+// выбирают одной кнопкой над лентой (filter.js, решение автора 2026-11-04).
 // Все объявления одной плиткой (решение автора 2026-11-04): работа больше не широкая карточка, у неё своя страница.
 // Объявления села (решение автора 2026-11-04): тоже плитка, без цены. Без фото на плитке начало текста.
 // Объявление админа синее, с меткой «От админа». Ещё здесь страница объявления и поиск
 import { icon, waIcon, phoneIcon, kindOf, plainName } from './icons.js';
-import { esc, ago, wa, money, unitShort, plural, dayName, LIFE } from './util.js';
+import { esc, ago, wa, money, unitShort, plural, dayName, LIFE, fits } from './util.js';
 import { $, photo, SIZES, watch } from './ui.js';
 import * as store from './store.js';
 import { prepare } from './share.js';
+import * as filter from './filter.js';
 
 export const state = { q: '' };
 const TYPES = ['masters', 'requests', 'goods', 'news'];
@@ -57,6 +59,8 @@ function reach(x, hello) {
 // Поиск по словам: что делает или продаёт, имя, вид работ или категория, текст работы, «услуга», «работа», «куплю»
 const SAY = { masters: 'услуга', requests: 'работа', goods: 'товар продаю', news: 'объявление село новость' };
 function match(x) {
+  // Фильтр над лентой (filter.js): раздел и категория. Поиск ищет внутри них
+  if (!fits(x, filter.pick)) return false;
   if (!state.q) return true;
   const text = lc([x.title, x.text, who(x), x.note, x.deal === 'buy' ? 'куплю' : SAY[x.type], plainName(kindOf(x.type, x.kind))].join(' '));
   return lc(state.q).split(/\s+/).every(w => text.includes(w));
@@ -100,18 +104,23 @@ export function renderList() {
   // Роботу ни объявлений, ни «Пока пусто»: в поиск идут заголовок, описание и подвал
   if (store.robot) { root.hidden = true; return; }
   if (!end.isConnected) root.after(end);
-  const list = items().filter(match);
+  const all = items();
+  filter.draw(all);
+  const list = all.filter(match);
   const days = {};
   list.forEach(x => { const d = dayName(x.at); days[d] = (days[d] || 0) + 1; });
   // Новые объявления пришли, пока человек листает: лента сохраняет, сколько он уже видел. Новый поиск: сначала
-  const n = more ? (state.q === feed.q ? Math.max(PART, feed.shown) : PART) : list.length;
-  feed = { list, shown: 0, days, q: state.q };
+  const key = `${state.q}|${filter.pick.sec}|${filter.pick.kind}`;
+  const n = more ? (key === feed.q ? Math.max(PART, feed.shown) : PART) : list.length;
+  feed = { list, shown: 0, days, q: key };
   root.innerHTML = '';
   if (list.length) return addPart(n);
   end.hidden = true;
   // Объявления ещё не пришли: «Загружаем», а не «Пока пусто». Иначе на слабой связи доска кажется пустой
   const empty = !store.loaded() ? '<p>Загружаем объявления.</p>'
-    : state.q ? '<p>Ничего не нашлось.</p>' : '<p>Пока пусто.</p><a class="btn btn-ink" href="#/razmestit">Разместить</a>';
+    : state.q ? '<p>Ничего не нашлось.</p>'
+      : filter.pick.sec ? '<p>Здесь пока пусто.</p><button class="btn btn-ink" type="button" data-filt="all">Показать все объявления</button>'
+        : '<p>Пока пусто.</p><a class="btn btn-ink" href="#/razmestit">Разместить</a>';
   root.innerHTML = `<div class="empty">${empty}</div>`;
 }
 
@@ -166,3 +175,6 @@ export function galleryCounter() {
   if (!g || !n) return;
   g.addEventListener('scroll', () => { n.textContent = `${Math.round(g.scrollLeft / g.clientWidth) + 1} / ${g.children.length}`; }, { passive: true });
 }
+
+// Выбрали раздел или категорию над лентой: лента заново, с первой части
+filter.onChange(renderList);

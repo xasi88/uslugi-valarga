@@ -39,7 +39,7 @@
 <script type="module" async src="js/first.js"></script>
 <link rel="modulepreload" href="js/app.js"><link rel="modulepreload" href="js/config.js"><link rel="modulepreload" href="js/util.js">
 <link rel="modulepreload" href="js/store.js"><link rel="modulepreload" href="js/ui.js"><link rel="modulepreload" href="js/icons.js">
-<link rel="modulepreload" href="js/board.js"><link rel="modulepreload" href="js/post.js"><link rel="modulepreload" href="js/photos.js">
+<link rel="modulepreload" href="js/board.js"><link rel="modulepreload" href="js/filter.js"><link rel="modulepreload" href="js/post.js"><link rel="modulepreload" href="js/photos.js">
 <link rel="modulepreload" href="js/mine.js"><link rel="modulepreload" href="js/stats.js"><link rel="modulepreload" href="js/settings.js">
 <link rel="modulepreload" href="js/sound.js"><link rel="modulepreload" href="js/push.js"><link rel="modulepreload" href="js/prefs.js">
 <link rel="modulepreload" href="js/install.js"><link rel="modulepreload" href="js/versions.js"><link rel="modulepreload" href="js/ask.js"><link rel="modulepreload" href="js/share.js">
@@ -65,6 +65,7 @@
     <div class="wrap page-head">
       <h1>Доска <em>села</em></h1>
       <p>Услуги, работа и товары от жителей. Новое сверху.</p>
+      <div class="filt" id="filter" data-nosnippet hidden></div>
       <label class="search" id="search" hidden>
         <svg class="i" viewBox="0 0 24 24"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-3.5-3.5"/></svg>
         <input id="q" type="search" placeholder="Например: ворота, мёд, проводка" aria-label="Поиск по доске" autocomplete="off">

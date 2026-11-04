@@ -170,6 +170,22 @@ export function moveFields(x, to, deal = 'sell') {
   return { ...out, deal, title: what, price: sum, unit, note };
 }
 
+// Фильтр ленты (решение автора 2026-11-04): раздел и категория. Раздел объявления: услуги, работа, продаю, куплю, село
+export const SECTIONS = [['masters', 'Услуги'], ['requests', 'Работа'], ['sell', 'Продаю'], ['buy', 'Куплю'], ['news', 'Село']];
+export const sectionOf = x => (x.type === 'goods' ? (x.deal === 'buy' ? 'buy' : 'sell') : x.type);
+// Подходит ли объявление под фильтр f = { sec, kind }. Пустой раздел: все объявления
+export const fits = (x, f) => (!f.sec || sectionOf(x) === f.sec) && (!f.kind || x.kind === f.kind);
+// Сколько объявлений в разделах и в категориях раздела: { sell: 6, 'sell/telefony': 4, ... }
+export function tally(list) {
+  const n = {};
+  for (const x of list) {
+    const s = sectionOf(x);
+    n[s] = (n[s] || 0) + 1;
+    n[`${s}/${x.kind}`] = (n[`${s}/${x.kind}`] || 0) + 1;
+  }
+  return n;
+}
+
 // Тетрадь доски board/all (ведёт почтальон, 2026-11-04): { built, ads: { 'раздел_номер': 'JSON объявления' } }.
 // Ответ: { masters: [...], requests: [...], goods: [...], news: [...] }. Тетради нет или ей больше 3 часов
 // (почтальон молчит): null, доска берёт объявления по-старому, из каждого раздела
