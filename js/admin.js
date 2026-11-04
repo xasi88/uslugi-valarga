@@ -140,9 +140,11 @@ document.addEventListener('click', e => {
     if (a.dataset.a === 'ok') { store.setStatus(c.dataset.type, c.dataset.id, 'ok').then(tell); toast('Объявление на доске.'); }
     if (a.dataset.a === 'no') { store.setStatus(c.dataset.type, c.dataset.id, 'no').then(tell); toast('Объявление не на доске. Автор увидит это в «Моих».'); }
     if (a.dataset.a === 'off') { store.setStatus(c.dataset.type, c.dataset.id, 'off').then(tell); toast('Объявление снято с доски. Автор увидит это в «Моих».'); }
-    if (a.dataset.a === 'del') { store.remove(c.dataset.type, c.dataset.id); toast('Объявление удалено из базы.'); }
+    // Удалено или продлено: почтальон только правит тетрадь доски, уведомлений нет
+    const book = () => push.ping('board', c.dataset.type, c.dataset.id);
+    if (a.dataset.a === 'del') { store.remove(c.dataset.type, c.dataset.id).then(book); toast('Объявление удалено из базы.'); }
     if (a.dataset.a === 'renew') {
-      store.renew(c.dataset.type, c.dataset.id).then(() => toast('Объявление снова на доске, наверху ленты.'),
+      store.renew(c.dataset.type, c.dataset.id).then(() => { book(); toast('Объявление снова на доске, наверху ленты.'); },
         () => toast('Не получилось продлить. Проверьте связь.'));
     }
   };

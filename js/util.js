@@ -146,6 +146,21 @@ export function fromRest(fields = {}) {
   return Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, val(v)]));
 }
 
+// Тетрадь доски board/all (ведёт почтальон, 2026-11-04): { built, ads: { 'раздел_номер': 'JSON объявления' } }.
+// Ответ: { masters: [...], requests: [...], goods: [...], news: [...] }. Тетради нет или ей больше 3 часов
+// (почтальон молчит): null, доска берёт объявления по-старому, из каждого раздела
+export function fromBook(data, now = Date.now()) {
+  if (!data || !(now - data.built < 3 * 3600e3)) return null;
+  const out = { masters: [], requests: [], goods: [], news: [] };
+  for (const [key, json] of Object.entries(data.ads || {})) {
+    const i = key.indexOf('_');
+    const type = key.slice(0, i);
+    if (!out[type]) continue;
+    try { out[type].push({ ...JSON.parse(json), id: key.slice(i + 1) }); } catch { /* битая строка: без неё */ }
+  }
+  return out;
+}
+
 // Вопрос «Сообщать о новых объявлениях?» (ask.js). s: { n: сколько раз ответили «Не сейчас», at: когда }.
 // Снова через 3 дня, всего не больше 3 раз: дальше вопрос не мешает, включить можно в настройках
 export const askDue = (s = {}, now = Date.now()) => (s.n || 0) < 3 && now - (s.at || 0) >= 3 * 864e5;

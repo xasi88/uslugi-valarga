@@ -7,7 +7,7 @@
 // Скорость (2026-11-01): доска сразу показывает объявления из памяти телефона, потом берёт свежие
 // лёгким запросом (first.js). Тяжёлый Firebase (fb.js) грузится, только когда он нужен: wake()
 import { toast } from './ui.js';
-import { nextTime, isBot, sent } from './util.js';
+import { nextTime, isBot, sent, fromBook } from './util.js';
 import { firstBoard, fetchBoard } from './first.js';
 
 // Поисковый робот видит витрину без объявлений: имена и номера жителей не попадают в поиск (решение автора 2026-10-30)
@@ -93,8 +93,19 @@ function start() {
   const { db, auth, adminAuth, adminDb, collection, doc, query, where, onSnapshot, onAuthStateChanged } = f;
   onSnapshot(doc(db, 'settings', 'board'), s => { guard = s.data()?.spam !== false; changed(); }, () => {});
   if (!isPanel) {
-    // Доска: всем людям видны выложенные объявления. С Firebase их приносит подписка, лёгкий запрос не нужен
-    TYPES.forEach(t => listen(t, 'board', query(collection(db, t), where('status', '==', 'ok'))));
+    // Доска: с Firebase объявления приносит подписка на тетрадь board/all (одно чтение на изменение, 2026-11-04).
+    // Тетради нет или она старая: подписка на каждый раздел, как раньше
+    let each = null;
+    const byType = () => { each ||= TYPES.map(t => listen(t, 'board', query(collection(db, t), where('status', '==', 'ok')))); };
+    onSnapshot(doc(db, 'board', 'all'), s => {
+      const lists = fromBook(s.data());
+      if (!lists) return byType();
+      each?.forEach(stop => stop());
+      each = null;
+      put(lists);
+      keep();
+      changed();
+    }, byType);
     // Свои объявления любого статуса, если этот телефон уже входил
     onAuthStateChanged(auth, u => {
       stopAll(['mine']);

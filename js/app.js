@@ -122,8 +122,10 @@ document.addEventListener('click', e => {
   if (!act) return;
   const { act: a, id, type } = act.dataset;
   if (a === 'back' && canBack) { e.preventDefault(); history.back(); }
+  // Продано, продлено, удалено: почтальон правит тетрадь доски (board/all), другие видят это сразу
+  const book = () => push.ping('board', type, id);
   if (a === 'found') {
-    store.setStatus(type, id, 'done');
+    store.setStatus(type, id, 'done').then(book);
     toast(type === 'requests' ? 'Объявление снято с доски. Хорошей работы!' : 'Объявление снято с доски.');
   }
   if (a === 'notify-mine') settings.askMine(act);
@@ -137,10 +139,10 @@ document.addEventListener('click', e => {
   }
   if (a === 'renew') {
     act.disabled = true;
-    store.renew(type, id).then(() => toast('Готово: объявление снова на доске, наверху ленты.'),
+    store.renew(type, id).then(() => { book(); toast('Готово: объявление снова на доске, наверху ленты.'); },
       () => { act.disabled = false; toast('Не получилось продлить. Проверьте связь и попробуйте ещё раз.'); });
   }
-  if (a === 'del' && confirm('Удалить объявление? Вернуть его не получится.')) store.remove(type, id);
+  if (a === 'del' && confirm('Удалить объявление? Вернуть его не получится.')) store.remove(type, id).then(book);
   if (a === 'search') {
     const s = $('#search');
     s.hidden = !s.hidden;
