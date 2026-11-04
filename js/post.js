@@ -124,7 +124,7 @@ export function doneScreen() {
   return `<div class="scr done">
     <span class="done-mark">${icon('clock')}</span>
     <h1>Отправлено админу</h1>
-    <p class="scr-lead">Админ группы «Валарг» проверит объявление и выложит его на доску. Что с ним, видно во вкладке «Мои».</p>
+    <p class="scr-lead">Админ группы «Валарг» проверит объявление и выложит его на доску. Обычно в тот же день. Что с ним, видно во вкладке «Мои».</p>
     ${'Notification' in window && 'PushManager' in window && Notification.permission === 'default' && !prefs().notify
     ? '<button class="btn btn-ink btn-wide" data-act="notify-mine">Сообщить, когда проверят</button>' : ''}
     <a class="btn btn-ink btn-wide" href="#/moi">Мои объявления</a>

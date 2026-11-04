@@ -102,13 +102,13 @@ export function tell(title, body, url = '/#/moi') {
 
 // Свои объявления: статус поменялся (и пока доска была закрыта). Прошлые статусы в памяти телефона
 const SEEN = 'uv-seen';
-const SAY = { ok: 'Объявление выложено', no: 'Объявление не прошло проверку', off: 'Объявление снято с доски' };
+const SAY = { ok: 'Объявление выложено', no: 'Объявление не прошло проверку', off: 'Объявление снято с доски', old: 'Срок объявления вышел' };
 export function checkMine() {
   let seen = {};
   try { seen = JSON.parse(localStorage.getItem(SEEN) || '{}'); } catch { return; }
   for (const x of store.mine()) {
     const was = seen[x.id];
-    if (was && was !== x.status && SAY[x.status] && (was === 'wait' || x.status === 'off')) tell(SAY[x.status], x.title || x.text);
+    if (was && was !== x.status && SAY[x.status] && (was === 'wait' || x.status === 'off' || x.status === 'old')) tell(SAY[x.status], x.title || x.text);
     seen[x.id] = x.status;
   }
   const ids = Object.keys(seen);

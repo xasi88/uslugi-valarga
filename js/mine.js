@@ -1,8 +1,9 @@
 // Экран «Мои»: объявления с этого телефона, их статус, «Нашёл человека» у работы, «Продано» у товара.
 import { icon, kindOf } from './icons.js';
-import { esc, ago, priceText, payText } from './util.js';
+import { esc, ago, priceText, payText, plural, daysLeft, canRenew } from './util.js';
 import { photo, SIZES } from './ui.js';
 import * as store from './store.js';
+import { adminLine } from './post.js';
 
 const STATE = {
   wait: ['state-wait', 'На проверке'],
@@ -10,6 +11,7 @@ const STATE = {
   no: ['state-no', 'Не прошло проверку'],
   off: ['state-off', 'Снято с доски'],
   done: ['state-done', 'Человек найден'],
+  old: ['state-off', 'Срок вышел'],
 };
 
 // Товар снят хозяином: продан или куплен
@@ -24,6 +26,8 @@ function item(x) {
   let [cls, label] = STATE[x.status] || STATE.wait;
   if (isGood && x.status === 'done') label = DONE[deal];
   const acts = [];
+  // Срок на доске (с 2026-11-04): осталось мало или вышел: «Продлить», объявление снова наверху
+  if (canRenew(x, x.type)) acts.push(`<button class="btn btn-ink" data-act="renew" data-type="${x.type}" data-id="${x.id}">Продлить</button>`);
   if ((isReq || isGood) && x.status === 'ok') acts.push(`<button class="btn btn-ink" data-act="found" data-type="${x.type}" data-id="${x.id}">${isGood ? DONE[deal] : 'Нашёл человека'}</button>`);
   acts.push(`<button class="btn btn-line" data-act="del" data-type="${x.type}" data-id="${x.id}">Удалить</button>`);
   const cost = isReq ? payText(x) : priceText(x, true);
@@ -31,9 +35,17 @@ function item(x) {
     ${photo(x.photos?.[0], k, '', SIZES.thumb)}</div>
     <p class="mine-kind">${isGood && deal === 'buy' ? 'Куплю' : LABEL[x.type]} · ${k.name} · ${ago(x.at)}</p>
     <h3>${esc(isReq ? x.text : x.title)} <span class="num">· ${cost}</span></h3>
-    <p><span class="state ${cls}">${label}</span></p>
+    <p><span class="state ${cls}">${label}</span>${left(x)}</p>
     <div class="mine-acts">${acts.join('')}</div>
   </li>`;
+}
+
+// Сколько ещё висит на доске. Срок вышел: что делать
+function left(x) {
+  if (x.status === 'old') return '<span class="mine-left">Продлите, и оно снова будет на доске</span>';
+  if (x.status !== 'ok') return '';
+  const n = daysLeft(x.type, x.at);
+  return `<span class="mine-left">${n > 1 ? `Ещё ${n} ${plural(n, 'день', 'дня', 'дней')}` : 'Последний день'}</span>`;
 }
 
 export function mineScreen() {
@@ -45,5 +57,7 @@ export function mineScreen() {
       <p>Вы пока ничего не разместили.</p>
       <a class="btn btn-ink" href="#/razmestit">Разместить ${icon('arrow')}</a>
     </div>`}
+    <div class="mine-hint"><p>Разместили с другого телефона или браузера? Здесь его не видно. Админ поможет снять или поправить объявление.</p>
+      ${adminLine('Написать админу')}</div>
   </div>`;
 }

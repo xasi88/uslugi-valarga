@@ -137,6 +137,7 @@ body { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 .m-price small { margin-left: 6px; font: 800 15px var(--font); }
 .m-note { font-size: var(--fs-lead); font-weight: 600; }
 .m-date { font-size: var(--fs-cap); font-weight: 600; color: var(--ink-3); }
+.share { justify-self: start; margin-top: 4px; }
 .m-bar {
   position: fixed; z-index: 25; left: 0; right: 0; bottom: 0;
   display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;

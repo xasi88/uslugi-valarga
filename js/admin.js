@@ -19,8 +19,9 @@ function items(...statuses) {
 }
 
 // Вкладка «Снятые»: почему объявления нет на доске и как его вернуть (решение автора 2026-10-30).
-// «Человек найден» и «Продано» не возвращаются: объявление снял сам автор
-const GONE = { off: 'Снято с доски', no: 'Отклонено', done: 'Человек найден' };
+// «Человек найден» и «Продано» не возвращаются: объявление снял сам автор.
+// «Срок вышел» (с 2026-11-04) возвращает только владелец кнопкой «Продлить» в «Моих»
+const GONE = { off: 'Снято с доски', no: 'Отклонено', done: 'Человек найден', old: 'Срок вышел' };
 const gone = x => (x.status === 'done' && x.type === 'goods' ? (x.deal === 'buy' ? 'Куплено' : 'Продано') : GONE[x.status]);
 const LABEL = { masters: 'Услуга', requests: 'Работа', goods: 'Товар' };
 const BACK = { off: 'Вернуть на доску', no: 'Выложить' };
@@ -61,7 +62,7 @@ function guardBox() {
 
 function render() {
   guardBox();
-  const lists = { wait: items('wait'), ok: items('ok'), off: items('off', 'no', 'done') };
+  const lists = { wait: items('wait'), ok: items('ok'), off: items('off', 'no', 'done', 'old') };
   const names = { wait: 'Проверка', ok: 'На доске', off: 'Снятые' };
   $('#a-tabs').innerHTML = Object.keys(names).map(k =>
     `<button class="chip" role="tab" data-tab="${k}" aria-pressed="${tab === k}">${names[k]} <b>${lists[k].length}</b></button>`).join('');

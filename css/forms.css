@@ -110,6 +110,9 @@
 .mine-acts { grid-column: 1 / -1; }
 .mine-acts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
 .mine-acts .btn { flex: 1 1 auto; min-height: 46px; }
+.mine-left { margin-left: 8px; color: var(--ink-2); font-size: var(--fs-cap); font-weight: 700; }
+/* Подсказка внизу «Моих»: объявление с другого телефона здесь не видно */
+.mine-hint { display: grid; gap: 4px; margin-top: 18px; color: var(--mint); font-size: var(--fs-small); }
 .empty-mine { display: grid; gap: 16px; justify-items: start; padding: 18px; border: var(--edge); border-radius: var(--r-card); background: var(--paper); color: var(--ink-2); box-shadow: var(--drop); font-weight: 700; }
 
 /* Подробности и свой контакт за кнопкой (2026-11-01): на экране формы меньше полей.

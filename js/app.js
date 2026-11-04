@@ -120,6 +120,11 @@ document.addEventListener('click', e => {
     toast(type === 'goods' ? 'Объявление снято с доски.' : 'Объявление снято с доски. Хорошей работы!');
   }
   if (a === 'notify-mine') settings.askMine(act);
+  if (a === 'renew') {
+    act.disabled = true;
+    store.renew(type, id).then(() => toast('Готово: объявление снова на доске, наверху ленты.'),
+      () => { act.disabled = false; toast('Не получилось продлить. Проверьте связь и попробуйте ещё раз.'); });
+  }
   if (a === 'del' && confirm('Удалить объявление? Вернуть его не получится.')) store.remove(type, id);
   if (a === 'search') {
     const s = $('#search');

@@ -258,6 +258,11 @@ const quiet = job => wake().then(job).catch(e => toast(why(e)));
 export const setStatus = (type, id, status) => quiet(m => m.updateDoc(m.doc(m.db, type, id), { status }));
 export const setGuard = on => quiet(m => m.setDoc(m.doc(m.db, 'settings', 'board'), { spam: on }));
 export const remove = (type, id) => quiet(m => m.deleteDoc(m.doc(m.db, type, id)));
+// «Продлить»: снова на доске и наверху ленты. Правила базы пускают это только владельцу и только в конце срока
+export async function renew(type, id) {
+  const m = await wake();
+  await m.updateDoc(m.doc(m.db, type, id), { status: 'ok', at: Date.now() });
+}
 
 // Вход админа в панели: out (не вошёл), checking (проверяем), in (админ), denied (чужая почта)
 export const adminState = () => panel;

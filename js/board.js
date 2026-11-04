@@ -102,9 +102,18 @@ export function itemPage(type, id) {
       <p class="m-price num">${priceText(m)}${m.price && m.unit ? `<small>${esc(m.unit)}</small>` : ''}</p>
       ${m.note ? `<p class="m-note">${esc(m.note)}</p>` : ''}
       <p class="m-date">Размещено ${ago(m.at)}</p>
+      <a class="btn btn-line share" href="${share(type, m)}" target="_blank" rel="noopener">${waIcon}Переслать в WhatsApp</a>
     </div>
     <div class="m-bar">${reach(m, hello)}</div>
   </article>`;
+}
+
+// «Переслать в WhatsApp» (с 2026-11-04): WhatsApp откроет список чатов, текст со ссылкой на объявление.
+// Так объявление расходится по группам и чатам села, а по ссылке приходят новые люди
+const SITE = 'https://valarg.ru/';
+function share(type, m) {
+  const what = `${m.deal === 'buy' ? 'Куплю: ' : ''}${m.title}, ${priceText(m)}${m.price && m.unit ? ' ' + m.unit : ''}`;
+  return wa('', `${what}. Смотрите на доске села «Валарг»: ${SITE}${PAGE[type]}${m.id}`);
 }
 
 // Номер фото в галерее при листании

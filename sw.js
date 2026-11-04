@@ -3,7 +3,7 @@
 // версию, без сети берётся копия. Объявления не копируются: их держит база Firebase.
 // Хранилище копий общее у всех сайтов адреса: служба удаляет только свои копии (имя с PREFIX).
 const PREFIX = 'uslugi-valarga-';
-const CACHE = PREFIX + 'v8';
+const CACHE = PREFIX + 'v9';
 const SHELL = [
   '/', '/admin/', '/manifest.webmanifest', '/admin/manifest.webmanifest',
   '/css/base.css', '/css/site.css', '/css/forms.css', '/css/admin.css',
@@ -23,21 +23,35 @@ self.addEventListener('activate', e => {
     .then(() => self.clients.claim()));
 });
 
+// Слабая связь (решение автора 2026-11-04): сеть отвечает дольше 3 секунд, и человек получает копию из памяти.
+// Свежий файл докачивается в фоне и ляжет в копию к следующему открытию. Копии нет: ждём сеть до конца
+const WAIT = 3000;
 self.addEventListener('fetch', e => {
   const req = e.request;
   const url = new URL(req.url);
   if (req.method !== 'GET' || url.origin !== location.origin) return;
   // no-cache: браузер сверяет файл с сервером, и после выкладки новые файлы не смешиваются со старыми
   // (2026-10-29: в NAFI новый скрипт встретил старый из памяти браузера, и каталог не загрузился)
-  e.respondWith(fetch(req, { cache: 'no-cache' }).then(res => {
+  const net = fetch(req, { cache: 'no-cache' }).then(res => {
     if (res.ok) {
       const copy = res.clone();
-      caches.open(CACHE).then(c => c.put(req, copy));
+      return caches.open(CACHE).then(c => c.put(req, copy)).then(() => res, () => res);
     }
     return res;
-  }).catch(() => caches.match(req, { ignoreSearch: true })
-    .then(hit => hit || (req.mode === 'navigate' ? caches.match(url.pathname.startsWith('/admin') ? '/admin/' : '/') : undefined))
-    .then(hit => hit || Response.error())));
+  });
+  e.waitUntil(net.catch(() => {}));
+  // Сначала точная копия (с тем же ?v=): старая страница берёт свои старые файлы, версии не смешиваются
+  const copy = () => caches.match(req)
+    .then(hit => hit || caches.match(req, { ignoreSearch: true }))
+    .then(hit => hit || (req.mode === 'navigate' ? caches.match(url.pathname.startsWith('/admin') ? '/admin/' : '/') : undefined));
+  e.respondWith((async () => {
+    const slow = new Promise(r => setTimeout(r, WAIT, 'slow'));
+    const first = await Promise.race([net.catch(() => 'fail'), slow]);
+    if (first !== 'slow' && first !== 'fail') return first;
+    const hit = await copy();
+    if (hit) return hit;
+    return net.catch(() => Response.error());
+  })());
 });
 
 // Уведомление от почтальона (worker, через FCM). Молчит, только если человек сейчас в окне доски:
