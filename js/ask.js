@@ -2,8 +2,9 @@
 // Включить уведомления силой нельзя: разрешает только сам человек в окне браузера. Это окно
 // появляется только после «Да»: «Блокировать» в нём закрывает вопрос навсегда, второй раз сайт
 // спросить уже не сможет. «Не сейчас»: вопрос вернётся через 3 дня, всего не больше 3 раз (askDue).
-// iPhone принимает уведомления, только если доска стоит на экране: там сначала подсказка о значке
-import { $, toast } from './ui.js';
+// iPhone принимает уведомления, только если доска стоит на экране: об этом говорит карточка установки (install.js).
+// Карточки наверху ленты по одной: вопрос ждёт, пока человек ответит на карточку установки
+import { $, toast, showCard, hideCard } from './ui.js';
 import { askDue } from './util.js';
 import { prefs, chosen, setPref } from './prefs.js';
 import { send } from './stats.js';
@@ -15,21 +16,15 @@ const read = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}');
 const save = s => { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { /* не страшно */ } };
 
 const can = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
-const installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-const iphone = /iphone|ipad|ipod/i.test(navigator.userAgent);
-
-// Какой вопрос нужен этому телефону: ask, iphone или никакой
-function mode() {
-  if (store.robot) return null;
-  if (can) {
-    const p = Notification.permission;
-    return p === 'default' || (p === 'granted' && !prefs().fresh && !chosen('fresh')) ? 'ask' : null;
-  }
-  return iphone && !installed ? 'iphone' : null;
+// Нужен ли вопрос этому телефону: уведомления ещё не разрешены или новые объявления ещё не включены
+function due() {
+  if (store.robot || !can) return false;
+  const p = Notification.permission;
+  return p === 'default' || (p === 'granted' && !prefs().fresh && !chosen('fresh'));
 }
 
 const box = $('#ask');
-const hide = () => { box.hidden = true; };
+const hide = () => hideCard(box);
 
 // Человек не хочет сейчас: спросить позже
 function later() {
@@ -53,19 +48,12 @@ async function yes() {
     : 'Этот телефон примет уведомления, только когда доска открыта.', 7000);
 }
 
-const m = mode();
-if (box && m && askDue(read())) {
-  if (m === 'iphone') {
-    $('#ask-title').textContent = 'Уведомления на iPhone';
-    $('#ask-text').textContent = 'Приходят, если доска стоит на экране. Нажмите «Поделиться», потом «На экран Домой» и откройте доску со значка.';
-    $('#ask-yes').hidden = true;
-    $('#ask-no').textContent = 'Понятно';
-  }
+if (box && due() && askDue(read())) {
   $('#ask-yes').addEventListener('click', yes);
   $('#ask-no').addEventListener('click', () => {
     later();
     send({ 'Уведомления': { 'Вопрос на доске': 'Не сейчас' } });
     toast('Включить можно в настройках: шестерёнка справа вверху.', 7000);
   });
-  box.hidden = false;
+  showCard(box);
 }

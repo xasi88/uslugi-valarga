@@ -1,38 +1,48 @@
 // Доска: одна лента по дням (решение автора 2026-11-01, образец docs/obrazcy/lenta.html). Услуги, работа и товары
 // вместе, новое сверху, группы «Сегодня», «Вчера», «30 октября». Без вкладок и рядов категорий: категории только в форме.
 // Все объявления одной плиткой (решение автора 2026-11-04): работа больше не широкая карточка, у неё своя страница.
-// Ещё здесь страница объявления и поиск
+// Объявления села (решение автора 2026-11-04): тоже плитка, без цены. Без фото на плитке начало текста.
+// Объявление админа синее, с меткой «От админа». Ещё здесь страница объявления и поиск
 import { icon, waIcon, phoneIcon, kindOf, plainName } from './icons.js';
-import { esc, ago, wa, money, unitShort, plural, dayName } from './util.js';
+import { esc, ago, wa, money, unitShort, plural, dayName, LIFE } from './util.js';
 import { $, photo, SIZES, watch } from './ui.js';
 import * as store from './store.js';
 import { prepare } from './share.js';
 
 export const state = { q: '' };
-const TYPES = ['masters', 'requests', 'goods'];
+const TYPES = ['masters', 'requests', 'goods', 'news'];
 const delay = i => `--d:${Math.min(i, 8) * 40}ms`;
 const lc = s => String(s || '').toLowerCase();
-// Страница плитки: услуга #/m/, товар #/t/, работа #/r/
-const PAGE = { masters: '#/m/', goods: '#/t/', requests: '#/r/' };
-// Метка на фото: что это за объявление. «Куплю» лимонная, чтобы не спутать с продажей, «Работа» мятная
+// Страница плитки: услуга #/m/, товар #/t/, работа #/r/, объявление села #/n/
+const PAGE = { masters: '#/m/', goods: '#/t/', requests: '#/r/', news: '#/n/' };
+// Метка на фото: что это за объявление. «Куплю» лимонная, чтобы не спутать с продажей, «Работа» мятная,
+// «Село» чёрная, «От админа» на синей плитке
 const tag = x => (x.type === 'masters' ? '<span class="tag">Услуга</span>'
   : x.type === 'requests' ? '<span class="tag work">Работа</span>'
-    : x.deal === 'buy' ? '<span class="tag buy">Куплю</span>' : '<span class="tag">Продаю</span>');
+    : x.type === 'news' ? (x.admin ? '<span class="tag admin">От админа</span>' : '<span class="tag news">Село</span>')
+      : x.deal === 'buy' ? '<span class="tag buy">Куплю</span>' : '<span class="tag">Продаю</span>');
+const ADMIN_NAME = 'Админ группы «Валарг»';
+const who = x => (x.admin ? ADMIN_NAME : x.name);
 
-// Что и сколько у любого объявления: у работы текст и оплата, у услуги и товара название и цена
-const what = x => (x.type === 'requests' ? x.text : x.title);
+// Что и сколько у любого объявления: у работы и объявления села текст, у услуги и товара название. Цена, оплата
+const what = x => (x.type === 'requests' || x.type === 'news' ? x.text : x.title);
 const sum = x => (x.type === 'requests' ? x.budget : x.price);
 const base = x => (sum(x) ? (x.from ? 'от ' : '') + money(sum(x)) : 'договорная');
 
 function tile(x, i) {
   const k = kindOf(x.type, x.kind);
   const n = x.photos?.length || 0;
+  const isNews = x.type === 'news';
   // Ценник: цена шрифтом Unbounded, единица коротко и мельче, чтобы ценник влез в узкую плитку
   const unit = sum(x) ? unitShort(x.unit) : '';
-  return `<a class="tile fade-in" style="${delay(i)}" href="${PAGE[x.type]}${x.id}">
-    ${photo(x.photos?.[0], k, what(x), SIZES.tile)}${tag(x)}<span class="price num">${esc(base(x))}${unit ? `<small>${esc(unit)}</small>` : ''}</span>${n > 1 ? `<span class="count">${n} фото</span>` : ''}</div>
-    <p class="tile-title">${esc(what(x))}</p>
-    <p class="tile-who">${icon('ok')}${esc(x.name)} · ${lc(k.name)}</p>
+  const cost = isNews ? '' : `<span class="price num">${esc(base(x))}${unit ? `<small>${esc(unit)}</small>` : ''}</span>`;
+  // Объявление села без фото: начало текста на тоне вида, под плиткой вид. С фото: как у всех
+  const note = isNews && !n;
+  const pic = note ? `<div class="ph ph-note" style="--tone:var(--tone-${k.tint})"><p>${esc(x.text)}</p>` : photo(x.photos?.[0], k, what(x), SIZES.tile);
+  return `<a class="tile fade-in${x.admin ? ' admin' : ''}" style="${delay(i)}" href="${PAGE[x.type]}${x.id}">
+    ${pic}${tag(x)}${cost}${n > 1 ? `<span class="count">${n} фото</span>` : ''}</div>
+    <p class="tile-title">${esc(note ? plainName(k) : what(x))}</p>
+    <p class="tile-who">${icon('ok')}${esc(who(x))}${note ? '' : ' · ' + lc(plainName(k))}</p>
   </a>`;
 }
 
@@ -45,42 +55,76 @@ function reach(x, hello) {
 }
 
 // Поиск по словам: что делает или продаёт, имя, вид работ или категория, текст работы, «услуга», «работа», «куплю»
-const SAY = { masters: 'услуга', requests: 'работа', goods: 'товар продаю' };
+const SAY = { masters: 'услуга', requests: 'работа', goods: 'товар продаю', news: 'объявление село новость' };
 function match(x) {
   if (!state.q) return true;
-  const text = lc([x.title, x.text, x.name, x.note, x.deal === 'buy' ? 'куплю' : SAY[x.type], plainName(kindOf(x.type, x.kind))].join(' '));
+  const text = lc([x.title, x.text, who(x), x.note, x.deal === 'buy' ? 'куплю' : SAY[x.type], plainName(kindOf(x.type, x.kind))].join(' '));
   return lc(state.q).split(/\s+/).every(w => text.includes(w));
 }
-const items = () => TYPES.flatMap(t => store.board(t).map(x => ({ ...x, type: t }))).sort((a, b) => b.at - a.at);
+// Объявление села живёт 24 часа: доска прячет его сама, почтальон снимает его раз в час
+const alive = x => x.type !== 'news' || Date.now() - x.at < LIFE.news * 864e5;
+const items = () => TYPES.flatMap(t => store.board(t).map(x => ({ ...x, type: t }))).filter(alive).sort((a, b) => b.at - a.at);
+
+// Лента частями (решение автора 2026-11-04): сначала PART плиток, следующие при прокрутке к концу ленты.
+// Поиск ищет по всем объявлениям: частями только рисуются плитки. Тормозят плитки и фото, а не данные
+const PART = 24;
+let feed = { list: [], shown: 0, days: {}, q: null };
+const end = document.createElement('div');
+const more = 'IntersectionObserver' in window
+  ? new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) addPart(PART); }, { rootMargin: '800px 0px' }) : null;
+
+// Дорисовать n плиток в конец ленты. Плитка того же дня встаёт в его сетку, новый день начинает свою
+function addPart(n) {
+  const root = $('#feed');
+  const part = feed.list.slice(feed.shown, feed.shown + n);
+  feed.shown += part.length;
+  let sec = root.lastElementChild;
+  part.forEach((x, i) => {
+    const name = dayName(x.at);
+    if (sec?.dataset.day !== name) {
+      const k = feed.days[name];
+      root.insertAdjacentHTML('beforeend', `<section data-day="${name}"><div class="day"><h2>${name}</h2>`
+        + `<span>${k} ${plural(k, 'объявление', 'объявления', 'объявлений')}</span></div><div class="grid"></div></section>`);
+      sec = root.lastElementChild;
+    }
+    sec.lastElementChild.insertAdjacentHTML('beforeend', tile(x, i));
+  });
+  watch(root);
+  // Конец ленты всё ещё близко (большой экран, быстрая прокрутка): заново спросить, видно ли его
+  end.hidden = feed.shown >= feed.list.length;
+  if (more) { more.unobserve(end); if (!end.hidden) more.observe(end); }
+}
 
 export function renderList() {
+  const root = $('#feed');
   // Роботу ни объявлений, ни «Пока пусто»: в поиск идут заголовок, описание и подвал
-  if (store.robot) { $('#feed').hidden = true; return; }
-  const days = [];
-  items().filter(match).forEach(x => {
-    const name = dayName(x.at);
-    if (days.at(-1)?.name !== name) days.push({ name, list: [] });
-    days.at(-1).list.push(x);
-  });
+  if (store.robot) { root.hidden = true; return; }
+  if (!end.isConnected) root.after(end);
+  const list = items().filter(match);
+  const days = {};
+  list.forEach(x => { const d = dayName(x.at); days[d] = (days[d] || 0) + 1; });
+  // Новые объявления пришли, пока человек листает: лента сохраняет, сколько он уже видел. Новый поиск: сначала
+  const n = more ? (state.q === feed.q ? Math.max(PART, feed.shown) : PART) : list.length;
+  feed = { list, shown: 0, days, q: state.q };
+  root.innerHTML = '';
+  if (list.length) return addPart(n);
+  end.hidden = true;
   // Объявления ещё не пришли: «Загружаем», а не «Пока пусто». Иначе на слабой связи доска кажется пустой
   const empty = !store.loaded() ? '<p>Загружаем объявления.</p>'
     : state.q ? '<p>Ничего не нашлось.</p>' : '<p>Пока пусто.</p><a class="btn btn-ink" href="#/razmestit">Разместить</a>';
-  $('#feed').innerHTML = days.length ? days.map(d => `<section>
-    <div class="day"><h2>${d.name}</h2><span>${d.list.length} ${plural(d.list.length, 'объявление', 'объявления', 'объявлений')}</span></div>
-    <div class="grid">${d.list.map(tile).join('')}</div>
-  </section>`).join('') : `<div class="empty">${empty}</div>`;
-  watch($('#feed'));
+  root.innerHTML = `<div class="empty">${empty}</div>`;
 }
 
 // Первая фраза в WhatsApp: человек сразу понимает, о каком объявлении речь
 function hello(type, x) {
   if (type === 'requests') return `Здравствуйте! Видел вашу работу на доске «Валарг»: ${x.text}.`;
   if (type === 'masters') return `Здравствуйте! Пишу с доски «Валарг». Нужна ваша услуга: ${x.title}.`;
+  if (type === 'news') return `Здравствуйте! Пишу по объявлению на доске «Валарг»: ${x.text.slice(0, 80)}.`;
   return x.deal === 'buy' ? `Здравствуйте! Видел на доске «Валарг», что вы покупаете: ${x.title}.`
     : `Здравствуйте! Пишу с доски «Валарг». Интересует ваш товар: ${x.title}.`;
 }
 
-// Страница объявления: услуга, работа или товар. Галерея, цена, подробности, «Поделиться», связь
+// Страница объявления: услуга, работа, товар или объявление села. Галерея, цена, подробности, «Поделиться», связь
 export function itemPage(type, id) {
   const found = store.find(type, id);
   // Объявления ещё не пришли: страница ждёт их (data-wait), app.js нарисует её заново
@@ -92,17 +136,21 @@ export function itemPage(type, id) {
   const shots = x.photos?.length ? x.photos : [null];
   const meta = type === 'requests' && (x.when || x.place)
     ? `<p class="req-meta">${x.when ? `<span>${icon('clock')}${esc(x.when)}</span>` : ''}${x.place ? `<span>${icon('pin')}${esc(x.place)}</span>` : ''}</p>` : '';
-  return `<article class="master">
+  const isNews = type === 'news';
+  const title = isNews ? plainName(k) : (type === 'requests' ? 'Работа: ' : x.deal === 'buy' ? 'Куплю: ' : '') + what(x);
+  const ver = x.admin ? `<p class="ver admin">${icon('ok')}От админа группы «Валарг»</p>` : `<p class="ver">${icon('ok')}Проверено админом группы «Валарг»</p>`;
+  // Объявление села без фото: вместо большого места под фото низкая полоса со значком вида
+  return `<article class="master${isNews && !x.photos?.length ? ' m-short' : ''}">
     <div class="gal">
       <div class="gal-track" id="gal">${shots.map(p => photo(p, k, what(x), SIZES.gal) + '</div>').join('')}</div>
       <a class="round" href="#/" data-act="back" aria-label="Назад">${icon('arrow')}</a>
       ${shots.length > 1 ? `<span class="count" id="gal-n">1 / ${shots.length}</span>` : ''}
     </div>
     <div class="m-body">
-      <p class="ver">${icon('ok')}Проверено админом группы «Валарг»</p>
-      <h1>${type === 'requests' ? 'Работа: ' : x.deal === 'buy' ? 'Куплю: ' : ''}${esc(what(x))}</h1>
-      <p class="m-who">${esc(x.name)} · ${k.name}</p>
-      <p class="m-price num">${esc(base(x))}${sum(x) && x.unit ? `<small>${esc(x.unit)}</small>` : ''}</p>
+      ${ver}
+      <h1>${esc(title)}</h1>
+      <p class="m-who">${esc(who(x))}${isNews ? '' : ' · ' + k.name}</p>
+      ${isNews ? `<p class="m-text">${esc(x.text)}</p>` : `<p class="m-price num">${esc(base(x))}${sum(x) && x.unit ? `<small>${esc(x.unit)}</small>` : ''}</p>`}
       ${meta}
       ${x.note ? `<p class="m-note">${esc(x.note)}</p>` : ''}
       <p class="m-date">Размещено ${ago(x.at)}</p>

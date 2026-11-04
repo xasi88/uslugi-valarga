@@ -46,3 +46,11 @@
 .a-ok { background: var(--emerald); color: var(--paper); }
 @media (hover: hover) { .a-ok:hover { background: var(--emerald-deep); } }
 .a-empty { padding: 28px 18px; border: var(--edge); border-radius: var(--r-card); background: var(--paper); color: var(--ink-2); box-shadow: var(--drop); font-weight: 700; }
+/* Объявление от админа (2026-11-04): форма над вкладками, своя карточка синей полосой */
+.a-news > details > summary { list-style: none; width: 100%; }
+.a-news > details > summary::-webkit-details-marker { display: none; }
+.a-form { display: grid; gap: 14px; margin-top: 14px; padding: 16px; border: var(--edge); border-radius: var(--r-card); background: var(--paper); box-shadow: var(--drop); }
+.a-form textarea { width: 100%; min-height: 110px; padding: 12px 14px; border: var(--edge); border-radius: var(--r); background: var(--white); color: var(--ink); font: 600 var(--fs-body)/1.4 var(--font); resize: vertical; }
+.a-kinds { display: flex; flex-wrap: wrap; gap: 8px; }
+.a-note { color: var(--ink-2); font-size: var(--fs-small); }
+.a-card.a-admin { border-left: 8px solid var(--cobalt); }

@@ -74,11 +74,14 @@ export const payText = r => (r.budget ? money(r.budget) + (r.unit ? ' ' + r.unit
 export const fullPrice = (type, x) => (type === 'requests' ? payText(x) : priceText(x) + (x.price && x.unit ? ' ' + x.unit : ''));
 
 // Текст «Поделиться» (решение автора 2026-11-04): что, цена, описание, ссылка на объявление в приложении
-const SHARE_PAGE = { masters: '#/m/', goods: '#/t/', requests: '#/r/' };
+const SHARE_PAGE = { masters: '#/m/', goods: '#/t/', requests: '#/r/', news: '#/n/' };
 export function shareText(type, x, site = 'https://valarg.ru/') {
+  const link = `Смотрите на доске села «Валарг»: ${site}${SHARE_PAGE[type]}${x.id}`;
+  // Объявление села: без цены, текст целиком и номер для связи (его и так видно на доске)
+  if (type === 'news') return [`${x.admin ? 'От админа группы «Валарг»' : 'Объявление села'}: ${x.text}`, `Связь: ${phoneNice(x.phone)}`, link].join('\n');
   const what = type === 'requests' ? `Работа: ${x.text}` : `${type === 'masters' ? 'Услуга' : x.deal === 'buy' ? 'Куплю' : 'Продаю'}: ${x.title}`;
   const about = type === 'requests' ? [x.when && `Когда: ${x.when}`, x.place && `Где: ${x.place}`].filter(Boolean).join('. ') : x.note;
-  return [`${what}, ${fullPrice(type, x)}`, about, `Смотрите на доске села «Валарг»: ${site}${SHARE_PAGE[type]}${x.id}`].filter(Boolean).join('\n');
+  return [`${what}, ${fullPrice(type, x)}`, about, link].filter(Boolean).join('\n');
 }
 
 // Версия a новее b («Проверить обновление», «Что нового»): «2.10» новее «2.9», «3.0» новее «2.9»
@@ -147,12 +150,14 @@ export function fromRest(fields = {}) {
 // Снова через 3 дня, всего не больше 3 раз: дальше вопрос не мешает, включить можно в настройках
 export const askDue = (s = {}, now = Date.now()) => (s.n || 0) < 3 && now - (s.at || 0) >= 3 * 864e5;
 
-// Срок на доске (решение автора 2026-11-04): услуги 90 дней, работа и товары 30. Те же числа в правилах базы
-// и у почтальона (worker). Потом почтальон снимает объявление (статус old), владелец продлевает его в «Моих»:
-// не раньше чем за RENEW дней до конца срока. Продлённое поднимается наверх ленты (новое время at)
-export const LIFE = { masters: 90, requests: 30, goods: 30 };
+// Срок на доске (решение автора 2026-11-04): услуги 90 дней, работа и товары 30, объявления села 1 день.
+// Те же числа в правилах базы и у почтальона (worker). Потом почтальон снимает объявление (статус old),
+// владелец продлевает его в «Моих»: не раньше чем за RENEW дней до конца срока, объявление села только
+// после конца. Продлённое поднимается наверх ленты (новое время at)
+export const LIFE = { masters: 90, requests: 30, goods: 30, news: 1 };
 export const RENEW = 5;
+const early = type => (type === 'news' ? 0 : RENEW);
 // Сколько дней осталось на доске, с неполным днём: только что выложено 30, меньше суток 1, срок вышел 0
 export const daysLeft = (type, at, now = Date.now()) => Math.max(0, Math.ceil((at + LIFE[type] * 864e5 - now) / 864e5));
 export const canRenew = (x, type, now = Date.now()) => x.status === 'old'
-  || (x.status === 'ok' && now - x.at > (LIFE[type] - RENEW) * 864e5);
+  || (x.status === 'ok' && now - x.at > (LIFE[type] - early(type)) * 864e5);

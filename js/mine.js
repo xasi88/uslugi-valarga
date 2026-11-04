@@ -1,6 +1,7 @@
-// Экран «Мои»: объявления с этого телефона, их статус, «Нашёл человека» у работы, «Продано» у товара.
+// Экран «Мои»: объявления с этого телефона, их статус, «Нашёл человека» у работы, «Продано» у товара,
+// «Снять с доски» у объявления села (с 2026-11-04).
 import { icon, kindOf } from './icons.js';
-import { esc, ago, priceText, payText, plural, daysLeft, canRenew } from './util.js';
+import { esc, ago, priceText, payText, plural, daysLeft, canRenew, LIFE } from './util.js';
 import { photo, SIZES } from './ui.js';
 import * as store from './store.js';
 import { adminLine } from './post.js';
@@ -16,25 +17,28 @@ const STATE = {
 
 // Товар снят хозяином: продан или куплен
 const DONE = { sell: 'Продано', buy: 'Куплено' };
-const LABEL = { masters: 'Услуга', requests: 'Работа', goods: 'Товар' };
+const LABEL = { masters: 'Услуга', requests: 'Работа', goods: 'Товар', news: 'Объявление села' };
 
 function item(x) {
   const k = kindOf(x.type, x.kind);
   const isReq = x.type === 'requests';
   const isGood = x.type === 'goods';
+  const isNews = x.type === 'news';
   const deal = x.deal === 'buy' ? 'buy' : 'sell';
   let [cls, label] = STATE[x.status] || STATE.wait;
   if (isGood && x.status === 'done') label = DONE[deal];
+  if (isNews && x.status === 'done') label = 'Вы сняли';
   const acts = [];
   // Срок на доске (с 2026-11-04): осталось мало или вышел: «Продлить», объявление снова наверху
   if (canRenew(x, x.type)) acts.push(`<button class="btn btn-ink" data-act="renew" data-type="${x.type}" data-id="${x.id}">Продлить</button>`);
-  if ((isReq || isGood) && x.status === 'ok') acts.push(`<button class="btn btn-ink" data-act="found" data-type="${x.type}" data-id="${x.id}">${isGood ? DONE[deal] : 'Нашёл человека'}</button>`);
+  const off = isGood ? DONE[deal] : isNews ? 'Снять с доски' : 'Нашёл человека';
+  if ((isReq || isGood || isNews) && x.status === 'ok') acts.push(`<button class="btn btn-ink" data-act="found" data-type="${x.type}" data-id="${x.id}">${off}</button>`);
   acts.push(`<button class="btn btn-line" data-act="del" data-type="${x.type}" data-id="${x.id}">Удалить</button>`);
-  const cost = isReq ? payText(x) : priceText(x, true);
+  const cost = isNews ? '' : isReq ? payText(x) : priceText(x, true);
   return `<li class="mine-item">
     ${photo(x.photos?.[0], k, '', SIZES.thumb)}</div>
     <p class="mine-kind">${isGood && deal === 'buy' ? 'Куплю' : LABEL[x.type]} · ${k.name} · ${ago(x.at)}</p>
-    <h3>${esc(isReq ? x.text : x.title)} <span class="num">· ${cost}</span></h3>
+    <h3>${esc(isReq || isNews ? x.text : x.title)}${cost ? ` <span class="num">· ${cost}</span>` : ''}</h3>
     <p><span class="state ${cls}">${label}</span>${left(x)}</p>
     <div class="mine-acts">${acts.join('')}</div>
   </li>`;
@@ -44,6 +48,11 @@ function item(x) {
 function left(x) {
   if (x.status === 'old') return '<span class="mine-left">Продлите, и оно снова будет на доске</span>';
   if (x.status !== 'ok') return '';
+  // Объявление села висит сутки: остаток в часах
+  if (x.type === 'news') {
+    const h = Math.max(1, Math.ceil((x.at + LIFE.news * 864e5 - Date.now()) / 36e5));
+    return `<span class="mine-left">Ещё ${h} ${plural(h, 'час', 'часа', 'часов')}</span>`;
+  }
   const n = daysLeft(x.type, x.at);
   return `<span class="mine-left">${n > 1 ? `Ещё ${n} ${plural(n, 'день', 'дня', 'дней')}` : 'Последний день'}</span>`;
 }

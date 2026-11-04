@@ -135,3 +135,7 @@
 .who > summary b { color: var(--ink); font-size: var(--fs-lead); font-weight: 800; overflow-wrap: anywhere; }
 .who > summary i { font-style: normal; white-space: nowrap; }
 .who > summary em { flex: none; display: grid; place-items: center; min-height: 44px; padding: 0 4px; font-style: normal; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+/* Объявление села: предупреждение перед отправкой, номер увидят все (решение автора 2026-11-04) */
+.warn { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border: var(--edge-thin); border-radius: var(--r); background: var(--lemon-soft); color: var(--ink); font-size: var(--fs-small); font-weight: 600; }
+.warn svg { flex: none; width: 20px; height: 20px; margin-top: 1px; fill: currentColor; stroke: none; }
+.warn b { font-weight: 800; }

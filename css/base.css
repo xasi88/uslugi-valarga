@@ -19,6 +19,8 @@
   --ink-2: #3d4a45;
   --ink-3: #6b7671;
   --danger: #c8331f;
+  /* Кобальт: только объявления от админа (решение автора 2026-11-04) */
+  --cobalt: #2b59c3;
 
   /* Тона места под фото: пока фото нет или оно грузится. Свой у вида работ */
   --tone-1: #b4ecd6;
@@ -141,6 +143,8 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor;
 /* Знак «проверено админом»: мятная метка */
 .ver { display: inline-flex; align-items: center; gap: 6px; justify-self: start; padding: 4px 12px 4px 8px; border: var(--edge-thin); border-radius: var(--r-pill); background: var(--mint); color: var(--ink); font-size: var(--fs-cap); font-weight: 800; }
 .ver svg { width: 15px; height: 15px; color: var(--emerald-deep); stroke-width: 3; }
+.ver.admin { background: var(--cobalt); color: var(--paper); }
+.ver.admin svg { color: var(--mint); }
 
 /* Состояние объявления */
 .state { display: inline-flex; align-items: center; min-height: 28px; padding: 2px 11px; border: var(--edge-thin); border-radius: var(--r-pill); font-size: var(--fs-cap); font-weight: 800; color: var(--ink); }

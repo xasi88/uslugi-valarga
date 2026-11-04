@@ -5,7 +5,7 @@ import { FIREBASE } from './config.js';
 import { fromRest, isBot } from './util.js';
 
 const URL = `https://firestore.googleapis.com/v1/projects/${FIREBASE.projectId}/databases/(default)/documents:runQuery?key=${FIREBASE.apiKey}`;
-const TYPES = ['masters', 'requests', 'goods'];
+const TYPES = ['masters', 'requests', 'goods', 'news'];
 
 // Тело запроса простым текстом, без заголовка JSON: так браузер не шлёт лишний предварительный запрос
 async function one(type) {
@@ -16,9 +16,10 @@ async function one(type) {
     .map(({ document: d }) => ({ ...fromRest(d.fields), id: d.name.split('/').pop() }));
 }
 
-// Объявления всех разделов: { masters: [...], requests: [...], goods: [...] }
+// Объявления всех разделов: { masters: [...], requests: [...], goods: [...], news: [...] }.
+// Один раздел не ответил (например, база ещё не знает новый раздел): остальные всё равно на доске
 export async function fetchBoard() {
-  const lists = await Promise.all(TYPES.map(one));
+  const lists = await Promise.all(TYPES.map(t => one(t).catch(e => (t === 'news' ? [] : Promise.reject(e)))));
   return Object.fromEntries(TYPES.map((t, i) => [t, lists[i]]));
 }
 

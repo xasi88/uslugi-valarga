@@ -44,6 +44,19 @@ export function viewPhoto(id) {
   document.body.append(v);
 }
 
+// Карточки наверху ленты: «Поставьте доску на телефон» и «Сообщать о новых?» (решение автора 2026-11-04).
+// На экране одна за раз: вторая ждёт, пока человек ответит на первую
+const cards = [];
+export function showCard(box) {
+  if (!cards.includes(box)) cards.push(box);
+  box.hidden = cards[0] !== box;
+}
+export function hideCard(box) {
+  box.hidden = true;
+  if (cards.includes(box)) cards.splice(cards.indexOf(box), 1);
+  if (cards[0]) cards[0].hidden = false;
+}
+
 // Появление при прокрутке: только прозрачность
 const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
   if (!e.isIntersecting) return;

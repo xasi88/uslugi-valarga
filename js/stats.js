@@ -30,7 +30,7 @@ export function send(params) {
 }
 
 // Экраны доски: отдельные просмотры. Самый первый Метрика считает сама
-const TITLES = { board: 'Доска', masters: 'Услуги', requests: 'Работа', goods: 'Товары', master: 'Мастер', good: 'Товар', post: 'Разместить', mine: 'Мои', settings: 'Настройки' };
+const TITLES = { board: 'Доска', masters: 'Услуги', requests: 'Работа', goods: 'Товары', master: 'Мастер', good: 'Товар', work: 'Работа', news: 'Объявление села', post: 'Разместить', mine: 'Мои', settings: 'Настройки' };
 const where = () => TITLES[document.body.dataset.view] || 'Доска';
 let first = true;
 export function screen(view) {

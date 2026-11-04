@@ -1,6 +1,7 @@
 // Хранилище объявлений: база Firestore (Firebase). Экраны знают только функции ниже.
 // Статусы: wait (на проверке), ok (на доске), no (отклонено), off (снято админом с доски), done (человек найден).
-// masters: услуги, requests: работа от жителей, goods: товары (продаю и куплю, с 2026-10-31). Торга нет (решение автора 2026-10-30): старые предложения цены не читаются.
+// masters: услуги, requests: работа от жителей, goods: товары (продаю и куплю, с 2026-10-31),
+// news: объявления села (с 2026-11-04, объявление админа выкладывается сразу). Торга нет (решение автора 2026-10-30): старые предложения цены не читаются.
 // Житель входит без аккаунта (анонимный вход, он его не видит): по этому входу «Мои»
 // находит свои объявления. Автор входит в панели через Google. Права проверяют правила базы.
 // Скорость (2026-11-01): доска сразу показывает объявления из памяти телефона, потом берёт свежие
@@ -14,10 +15,10 @@ export const robot = isBot(navigator.userAgent);
 const isPanel = location.pathname.includes('/admin/');
 
 const DAY = 864e5;
-const TYPES = ['masters', 'requests', 'goods'];
+const TYPES = ['masters', 'requests', 'goods', 'news'];
 
 // Каждая подписка кладёт свои документы отдельно, экраны видят их вместе
-const parts = { masters: {}, requests: {}, goods: {} };
+const parts = { masters: {}, requests: {}, goods: {}, news: {} };
 const subs = new Set();
 export const onChange = fn => subs.add(fn);
 const changed = () => subs.forEach(fn => fn());
@@ -66,9 +67,10 @@ const list = type => merged(type).sort((a, b) => b.at - a.at);
 
 // Защита от спама: одно объявление в сутки с телефона и с номера (решение автора 2026-10-30).
 // Товары считаются отдельно от услуг и работы (решение автора 2026-10-31): у них свои отметки gu_ и gp_.
+// Объявления села тоже отдельно (2026-11-04): nu_ и np_.
 // Админ включает и выключает её в панели. Настройки в базе ещё нет: защита включена
 let guard = true;
-const group = type => (type === 'goods' ? 'g' : '');
+const group = type => ({ goods: 'g', news: 'n' }[type] || '');
 export const guardOn = () => guard;
 
 let uid = null;
@@ -163,7 +165,7 @@ else if (!robot) {
   document.addEventListener('visibilitychange', () => { if (stale(60e3)) refresh(fetchBoard()); });
   // Телефону, который уже размещал или где входил админ, Firebase нужен и на доске: подсказки
   // о своих объявлениях, число на шестерёнке. Он грузится, когда доска уже на экране
-  if (['uv-last', 'uv-last-goods', 'uv-contact', 'uv-admin'].some(has)) setTimeout(() => wake().catch(() => {}), 2500);
+  if (['uv-last', 'uv-last-goods', 'uv-last-news', 'uv-contact', 'uv-admin'].some(has)) setTimeout(() => wake().catch(() => {}), 2500);
 }
 
 // Взять свежие объявления сейчас (пришло уведомление «Новое на доске»). С Firebase их приносит подписка
@@ -183,9 +185,10 @@ export function mine() {
     .filter(x => x.owner === uid).sort((a, b) => b.at - a.at);
 }
 
-// Последнее объявление с этого телефона в той же группе (товары или услуги с работой):
+// Последнее объявление с этого телефона в той же группе (товары, объявления села или услуги с работой):
 // отметка в памяти телефона или свои объявления из базы
-const lastKey = type => (group(type) ? 'uv-last-goods' : 'uv-last');
+const LAST = { g: 'uv-last-goods', n: 'uv-last-news' };
+const lastKey = type => LAST[group(type)] || 'uv-last';
 function lastPost(type) {
   let t = 0;
   try { t = +localStorage.getItem(lastKey(type)) || 0; } catch { /* памяти нет */ }
@@ -222,7 +225,7 @@ export async function add(type, data, onSlow = () => {}) {
     item = { ...data, at: Date.now(), status: 'wait', owner: u.uid };
     // В той же записи отметка времени для телефона и для номера: по ним база считает сутки.
     // t и id: где лежит объявление. Без объявления на этот номер база не ставит отметку номера.
-    // У товаров отметки свои (g): товар не мешает услуге или работе в тот же день
+    // У товаров (g) и объявлений села (n) отметки свои: они не мешают услуге или работе в тот же день
     const b = writeBatch(db);
     const stamp = { at: serverTimestamp(), t: type, id: ref.id };
     const g = group(type);
@@ -258,6 +261,14 @@ const quiet = job => wake().then(job).catch(e => toast(why(e)));
 export const setStatus = (type, id, status) => quiet(m => m.updateDoc(m.doc(m.db, type, id), { status }));
 export const setGuard = on => quiet(m => m.setDoc(m.doc(m.db, 'settings', 'board'), { spam: on }));
 export const remove = (type, id) => quiet(m => m.deleteDoc(m.doc(m.db, type, id)));
+// Объявление от админа (решение автора 2026-11-04): пишет только админ в панели, сразу на доске, без отметок
+// защиты от спама. Синяя плитка «От админа». Права проверяют правила базы (isAdmin)
+export async function adminNews(data) {
+  const m = await wake();
+  const ref = m.doc(m.collection(m.db, 'news'));
+  await m.setDoc(ref, { ...data, admin: true, at: Date.now(), status: 'ok', owner: m.auth.currentUser.uid });
+  return ref.id;
+}
 // «Продлить»: снова на доске и наверху ленты. Правила базы пускают это только владельцу и только в конце срока
 export async function renew(type, id) {
   const m = await wake();

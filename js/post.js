@@ -1,5 +1,5 @@
-// Экраны «Разместить» (услуга, работа или товар) и «Отправлено».
-import { icon, waIcon, KINDS, GOODS } from './icons.js';
+// Экраны «Разместить» (услуга, работа, товар или объявление села) и «Отправлено».
+import { icon, waIcon, phoneIcon, KINDS, GOODS, NEWS } from './icons.js';
 import { esc, phone, phoneNice, price, clean, wa } from './util.js';
 import { ADMIN_PHONE } from './config.js';
 import { $, reduce, toast, watch, photo } from './ui.js';
@@ -33,7 +33,7 @@ const kinds = (list = KINDS) => opts('kind', list.map(k => [k.id, k.name]), true
 // «Просто цена»: за всё сразу, без единицы. Есть во всех разделах и нажата сразу (решение автора 2026-10-31)
 const plain = list => [['', 'Просто цена'], ...list.map(u => [u, u])];
 const GOODS_UNITS = ['за штуку', 'за кг', 'за литр', 'за десяток', 'за мешок', 'за ящик', 'за метр', 'за м²', 'за м³', 'за голову'];
-const LABEL = { masters: 'Услуга', requests: 'Работа', goods: 'Товар' };
+const LABEL = { masters: 'Услуга', requests: 'Работа', goods: 'Товар', news: 'Объявление села' };
 const field = (label, input, hint = '') => `<label class="field"><span class="lbl">${label}</span>${input}${hint ? `<small>${hint}</small>` : ''}<em class="err"></em></label>`;
 const group = (label, inner) => `<fieldset class="field"><legend class="lbl">${label}</legend>${inner}<em class="err"></em></fieldset>`;
 const moneyInput = (name, ph) => `<span class="money"><input name="${name}" inputmode="numeric" maxlength="9" placeholder="${ph}" autocomplete="off"><i>₽</i></span>`;
@@ -66,6 +66,7 @@ export function choiceScreen() {
     ${row('#/razmestit/rabota', 'job', 3, 'Предлагаю работу', 'Опишите работу и оплату.')}
     ${row('#/razmestit/prodayu', 'bag', 4, 'Продаю', 'Покажите товар и цену.')}
     ${row('#/razmestit/kuplyu', 'bag', 5, 'Куплю', 'Напишите, что ищете и за сколько.')}
+    ${row('#/razmestit/obyavlenie', 'novost', 1, 'Объявление села', 'Новость, отключение, потеря или находка.')}
     ${adminLine('Вопрос по доске? Написать админу')}
   </div>`;
 }
@@ -120,6 +121,21 @@ export function goodsForm(deal) {
   </form>`;
 }
 
+// Объявление села (решение автора 2026-11-04): номер обязателен и виден всем, форма говорит об этом прямо.
+// По номеру админ проверяет, кто написал: объявление с чужого номера не пройдёт проверку
+export function newsForm() {
+  return `<form class="scr form" data-type="news" novalidate>
+    ${back('#/razmestit')}
+    <h1>Объявление села</h1>
+    ${group('О чём объявление?', kinds(NEWS) + maybe)}
+    ${field('Текст объявления', '<textarea name="text" maxlength="300" rows="4" placeholder="Например: завтра с 10:00 до 14:00 на улице Школьной не будет света"></textarea>', 'Висит на доске 24 часа.')}
+    ${group('Фото', shotsField('news') + '<small>Можно не добавлять. До 3 фото.</small>')}
+    ${who()}
+    <p class="warn">${phoneIcon}<span><b>Ваш номер и имя увидят все.</b> Админ может написать вам, чтобы проверить, что объявление ваше.</span></p>
+    <button class="btn btn-ink btn-wide">Отправить на проверку</button>
+  </form>`;
+}
+
 export function doneScreen() {
   return `<div class="scr done">
     <span class="done-mark">${icon('clock')}</span>
@@ -166,7 +182,7 @@ function read(form, need) {
   if (errs.length) { errs[0].scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' }); return null; }
   return out;
 }
-const must = min => s => (clean(s, 200).length >= min ? clean(s, 200) : null);
+const must = (min, max = 200) => s => (clean(s, max).length >= min ? clean(s, max) : null);
 // Вид работ и категория не обязательны (решение автора 2026-11-01): без выбора «Другое»
 const kindOr = s => clean(s, 20) || 'drugoe';
 const any = max => s => clean(s, max);
@@ -177,6 +193,7 @@ export async function submit(form) {
     requests: [['kind', kindOr], ['text', must(5), 'Напишите, что нужно сделать.'], ['budget', price], ['unit', any(20)], ['when', any(20)], ['place', any(40)]],
     masters: [['kind', kindOr], ['title', must(5), 'Напишите, что вы делаете.'], ['from', s => s === '1'], ['price', price], ['unit', any(20)], ['note', any(60)]],
     goods: [['deal', s => (s === 'buy' ? 'buy' : 'sell')], ['kind', kindOr], ['title', must(3), 'Напишите, что продаёте или покупаете.'], ['price', price], ['unit', any(20)], ['note', any(100)]],
+    news: [['kind', kindOr], ['text', must(10, 300), 'Напишите объявление: хотя бы 10 букв.']],
   }[type];
   const data = read(form, need);
   if (!data) return;

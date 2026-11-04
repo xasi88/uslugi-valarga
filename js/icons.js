@@ -51,6 +51,12 @@ const P = {
 // Авто и телефоны в товарах: те же значки, что у такси и техники
 P.zapchasti = P.taxi;
 P.telefony = P.tehnika;
+// Объявления села (2026-11-04): рупор, календарь, ключ. Свет и потеря: значки молнии и лупы
+P.novost = 'M4 10h3l9-5v14l-9-5H4zM7 14l1.5 6h3L10 15';
+P.sobytie = 'M4 6h16v15H4zM4 10h16M8 3v4M16 3v4';
+P.nashlos = 'M7.5 15.5a3.5 3.5 0 1 1 3.3-4.6H21v3h-2.5v2.5h-3v-2.5h-4.2a3.5 3.5 0 0 1-3.8 1.6zM7 12h.01';
+P.svet = P.elektr;
+P.poterya = P.search;
 
 export function icon(name, cls = 'i') {
   const w = name === 'drugoe' ? ' style="stroke-width:3"' : '';
@@ -98,8 +104,17 @@ export const GOODS = [
   { id: 'detskoe', name: 'Детское', tint: 2 },
   { id: 'drugoe', name: 'Другое', tint: 2 },
 ];
-// Виды для раздела: у товаров свои категории, у услуг и работы общие виды работ
-export const kindsOf = type => (type === 'goods' ? GOODS : KINDS);
+// Виды объявлений села (решение автора 2026-11-04): новости и отключения, потери и находки, события
+export const NEWS = [
+  { id: 'novost', name: 'Новость', tint: 3 },
+  { id: 'svet', name: 'Свет, газ, вода', tint: 4 },
+  { id: 'poterya', name: 'Потерялось', tint: 5 },
+  { id: 'nashlos', name: 'Нашлось', tint: 2 },
+  { id: 'sobytie', name: 'Событие', tint: 1 },
+  { id: 'drugoe', name: 'Другое', tint: 2 },
+];
+// Виды для раздела: у товаров и объявлений села свои, у услуг и работы общие виды работ
+export const kindsOf = type => (type === 'goods' ? GOODS : type === 'news' ? NEWS : KINDS);
 export const kindOf = (type, id) => { const l = kindsOf(type); return l.find(k => k.id === id) || l[l.length - 1]; };
 // Название без мягкого переноса: для поиска и статистики
 export const plainName = k => k.name.replace(/\u00ad/g, '');

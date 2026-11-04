@@ -14,7 +14,7 @@ import { send } from './stats.js';
 import { toast } from './ui.js';
 import * as store from './store.js';
 
-const LABEL = { masters: 'Услуга', requests: 'Работа', goods: 'Товар' };
+const LABEL = { masters: 'Услуга', requests: 'Работа', goods: 'Товар', news: 'Объявление села' };
 const together = /Android/i.test(navigator.userAgent);
 let ready = { id: null, file: null };
 

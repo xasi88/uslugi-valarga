@@ -25,12 +25,13 @@ const ROUTES = {
   '#/razmestit/rabota': ['post', 1, post.requestForm],
   '#/razmestit/prodayu': ['post', 1, () => post.goodsForm('sell')],
   '#/razmestit/kuplyu': ['post', 1, () => post.goodsForm('buy')],
+  '#/razmestit/obyavlenie': ['post', 1, post.newsForm],
   '#/gotovo': ['post', 1, post.doneScreen],
   '#/moi': ['mine', 2, mineScreen],
   '#/nastroyki': ['settings', -1, settings.settingsScreen],
 };
 // Страница плитки: мастер (#/m/<номер>), товар (#/t/<номер>) или работа (#/r/<номер>, с 2026-11-04) и собрание в базе
-const PAGES = { m: ['master', 'masters'], t: ['good', 'goods'], r: ['work', 'requests'] };
+const PAGES = { m: ['master', 'masters'], t: ['good', 'goods'], r: ['work', 'requests'], n: ['news', 'news'] };
 // Старые адреса: ссылки из WhatsApp ведут на доску и в ту же форму
 ROUTES['#/rabota'] = ROUTES['#/tovary'] = ROUTES['#/zayavki'] = ROUTES['#/'];
 ROUTES['#/razmestit/zayavka'] = ROUTES['#/razmestit/rabota'];
@@ -43,7 +44,7 @@ let booted = false;
 let current = null;
 function route() {
   const h = location.hash || '#/';
-  const m = h.match(/^#\/([mtr])\/([\w-]+)$/);
+  const m = h.match(/^#\/([mtrn])\/([\w-]+)$/);
   const page = m && PAGES[m[1]];
   const [view, tabI, screen] = page ? [page[0], 0, () => board.itemPage(page[1], m[2])] : ROUTES[h] || ROUTES['#/'];
   const prev = document.body.dataset.view;
@@ -118,7 +119,7 @@ document.addEventListener('click', e => {
   if (a === 'back' && canBack) { e.preventDefault(); history.back(); }
   if (a === 'found') {
     store.setStatus(type, id, 'done');
-    toast(type === 'goods' ? 'Объявление снято с доски.' : 'Объявление снято с доски. Хорошей работы!');
+    toast(type === 'requests' ? 'Объявление снято с доски. Хорошей работы!' : 'Объявление снято с доски.');
   }
   if (a === 'notify-mine') settings.askMine(act);
   if (a === 'share') sharing.share(act);
