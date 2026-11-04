@@ -146,15 +146,23 @@ body { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 }
 body[data-view="master"] .tab, body[data-view="good"] .tab, body[data-view="work"] .tab, body[data-view="news"] .tab { display: none; }
 
-/* «Установить»: лимонная наклейка наверху ленты (с 2026-11-04), видна, только если браузер умеет ставить приложение */
-.install { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px 16px; margin-top: 32px; padding: 16px; border: var(--edge); border-radius: var(--r-card); background: var(--lemon-soft); color: var(--ink); box-shadow: var(--drop); }
-.install b { display: block; font-size: 17px; font-weight: 800; }
-.install span { display: block; margin-top: 2px; color: var(--ink-2); font-size: var(--fs-small); }
-/* Вопрос об уведомлениях наверху ленты: та же лимонная плашка, две кнопки рядом */
-.ask { margin-top: 16px; }
-.ask-btns { display: flex; flex-wrap: wrap; gap: 8px; }
-.ask-btns > .btn { flex: 1 1 auto; padding: 0 14px; }
-@media (max-width: 420px) { .install { grid-template-columns: 1fr; } }
+/* Окно при первом входе (ask.js, 2026-11-04): бумажная наклейка над доской, доска под ним притушена.
+   На телефоне окно внизу, у пальца, на широком экране посередине. Длинное окно листается пальцем */
+.start { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); background: rgb(11 13 23 / .55); overflow-y: auto; overscroll-behavior: contain; }
+.start-card { width: 100%; max-width: 480px; margin: auto auto 0; display: grid; gap: 14px; padding: 20px 16px 16px; border: var(--edge); border-radius: var(--r-card); background: var(--paper); color: var(--ink); box-shadow: var(--drop); animation: pop .6s var(--spring) backwards; }
+@media (min-width: 640px) { .start-card { margin: auto; padding: 24px; } }
+.start-card h2 { font-size: var(--fs-h2); font-weight: 800; line-height: 1.2; }
+.start-lead, .start-note { color: var(--ink-2); font-size: var(--fs-small); }
+.start-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.start-list li { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; align-items: start; padding: 12px; border: var(--edge-thin); border-radius: var(--r); background: var(--white); }
+.start-i { width: 44px; height: 44px; display: grid; place-items: center; border: var(--edge-thin); border-radius: 50%; background: var(--lemon); }
+.start-i svg { width: 22px; height: 22px; }
+.start-list b { display: block; font-weight: 800; }
+.start-list i { display: block; margin-top: 2px; color: var(--ink-2); font-size: var(--fs-small); font-style: normal; overflow-wrap: anywhere; hyphens: auto; }
+.start-list em { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 3px 10px; border: var(--edge-thin); border-radius: var(--r-pill); background: var(--mint); font-size: var(--fs-cap); font-style: normal; font-weight: 800; }
+.start-list em svg { width: 16px; height: 16px; }
+.start-btns { display: grid; gap: 10px; }
+html.start-open { overflow: hidden; }
 
 /* Подвал: «Написать админу» бумажной кнопкой, вход для админа мятной ссылкой */
 .foot { display: grid; gap: 12px; justify-items: start; padding-top: 32px; padding-bottom: 20px; color: var(--mint); font-size: var(--fs-small); }

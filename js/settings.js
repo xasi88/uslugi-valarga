@@ -12,6 +12,7 @@ import * as store from './store.js';
 import { VERSIONS } from './versions.js';
 import { adminLine } from './post.js';
 import * as push from './push.js';
+import { installed, canPrompt } from './install.js';
 
 const day = d => { const t = new Date(d + 'T12:00'); return `${t.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })} ${t.getFullYear()}`; };
 const pair = (name, on, yes, no) => `<div class="set-pick">
@@ -23,6 +24,13 @@ const when = x => `<b>Версия ${x.v}</b> · ${day(x.date)}`;
 const list = x => `<ul>${x.items.map(i => `<li>${esc(i)}</li>`).join('')}</ul>`;
 const now = x => `<div class="ver-now"><p>${when(x)} <span class="ver-tag">Новое</span></p>${list(x)}</div>`;
 const old = x => `<details class="vrow"><summary><span>${when(x)}</span>${icon('down')}</summary>${list(x)}</details>`;
+
+// Значок на экране: стоит или как поставить (экран «Как установить», guide.js)
+function appBox() {
+  if (installed()) return '<p>Доска стоит на экране. Открывайте её значком «Валарг».</p><a class="btn btn-line" href="#/ustanovka">Как установить на другом телефоне</a>';
+  return `<p>Поставьте доску значком на экран: она откроется одним касанием, как приложение.</p>
+    ${canPrompt() ? '<button class="btn btn-ink" type="button" data-act="install">Установить</button>' : ''}<a class="btn btn-line" href="#/ustanovka">Как установить</a>`;
+}
 
 function adminBox(n) {
   if (n === null) {
@@ -46,6 +54,7 @@ export function settingsScreen() {
       <p>Ваше объявление выложено, не прошло проверку или снято с доски.${n === null ? '' : ' Админу: новое объявление на проверке.'}</p>
       ${pair('notify', p.notify, 'Включены', 'Выключены')}
       <p class="set-note">Приходят и когда доска закрыта. На iPhone: если доска поставлена на экран.</p></section>
+    <section class="set"><h2>${icon('app')}Значок на экране</h2>${appBox()}</section>
     <section class="set" id="set-admin"><h2>${icon('ok')}Админ</h2>${adminBox(n)}</section>
     <section class="set vers"><h2>${icon('clock')}Что нового</h2>
       ${now(VERSIONS[0])}

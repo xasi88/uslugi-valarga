@@ -198,7 +198,7 @@ function lastPost(type) {
 // Одно объявление в сутки. Форма спрашивает до загрузки фото, чтобы не грузить их зря.
 // Это подсказка телефону, а не замок: замок в правилах базы (limits)
 export function checkLimit(type) {
-  if (!guard) return;
+  if (!guard || adminHere()) return;
   const next = lastPost(type) + DAY;
   if (next > Date.now()) throw new Error(`Одно объявление в сутки. Следующее можно отправить ${nextTime(next)}.`);
 }
@@ -214,12 +214,34 @@ async function user() {
   return auth.currentUser || (await signInAnonymously(auth)).user;
 }
 
-// Новое объявление ждёт проверки админа. onSlow: связь слабая, форма говорит об этом и ждёт ответа базы
+// Этот телефон входил в панель почтой админа (отметку ставит доска, когда база отдала ему объявления на проверке)
+export const adminHere = () => has('uv-admin');
+
+// Админ размещает с доски сам (решение автора 2026-11-04): сразу на доске, синее «От админа», без проверки
+// и без защиты от спама. Пишет вход панели (права админа), владелец: вход жителя на этом телефоне.
+// Так объявление видно в «Моих», его можно продлить и снять, как у всех
+async function asAdmin(type, data, u, onSlow) {
+  const { adminDb, adminAuth, doc, collection, setDoc } = f;
+  await adminAuth.authStateReady();
+  if (!adminAuth.currentUser) return null;
+  const ref = doc(collection(adminDb, type));
+  const item = { ...data, admin: true, at: Date.now(), status: 'ok', owner: u.uid };
+  await sent(setDoc(ref, item), onSlow);
+  return { ...item, id: ref.id };
+}
+
+// Новое объявление ждёт проверки админа. Объявление самого админа сразу на доске (status ok).
+// onSlow: связь слабая, форма говорит об этом и ждёт ответа базы
 export async function add(type, data, onSlow = () => {}) {
   checkLimit(type);
   let item;
   try {
     const u = await user();
+    // База не признала админа (вышел из панели на другом телефоне): объявление идёт на проверку, как у всех
+    if (adminHere()) {
+      const own = await asAdmin(type, data, u, onSlow).catch(e => { if (e?.code === 'permission-denied') return null; throw e; });
+      if (own) return own;
+    }
     const { db, doc, collection, writeBatch, serverTimestamp } = f;
     const ref = doc(collection(db, type));
     item = { ...data, at: Date.now(), status: 'wait', owner: u.uid };

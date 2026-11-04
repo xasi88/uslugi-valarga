@@ -11,6 +11,9 @@ import * as push from './push.js';
 import { prefs, chosen, setPref } from './prefs.js';
 
 const back = href => `<a class="back" href="${href}" aria-label="Назад">${icon('arrow')}</a>`;
+// Админ на этом телефоне: его объявление сразу на доске, без проверки (решение автора 2026-11-04)
+const sendLabel = () => (store.adminHere() ? 'Выложить на доску' : 'Отправить на проверку');
+let lastOwn = false;
 
 // Связь с админом: WhatsApp автора с готовой первой фразой
 export const toAdmin = () => wa(ADMIN_PHONE, 'Здравствуйте! Пишу с доски «Валарг».');
@@ -61,7 +64,8 @@ export function choiceScreen() {
     </a>`;
   return `<div class="scr">
     <h1>Разместить</h1>
-    <p class="scr-lead">Бесплатно. Админ группы «Валарг» проверит объявление и выложит его на доску. Вам позвонят или напишут.</p>
+    <p class="scr-lead">${store.adminHere() ? 'Вы вошли как админ: объявление сразу на доске, без проверки. Плитка синяя, с подписью «От админа».'
+    : 'Бесплатно. Админ группы «Валарг» проверит объявление и выложит его на доску. Вам позвонят или напишут.'}</p>
     ${row('#/razmestit/usluga', 'camera', 2, 'Предлагаю услугу', 'Покажите фото работ и цену.')}
     ${row('#/razmestit/rabota', 'job', 3, 'Предлагаю работу', 'Опишите работу и оплату.')}
     ${row('#/razmestit/prodayu', 'bag', 4, 'Продаю', 'Покажите товар и цену.')}
@@ -83,7 +87,7 @@ export function requestForm() {
       + group('Когда?', opts('when', [['Сегодня', 'Сегодня'], ['Завтра', 'Завтра'], ['На этой неделе', 'На этой неделе'], ['Не срочно', 'Не срочно']]))
       + field('Улица', '<input name="place" maxlength="40" placeholder="Например: ул. Школьная">', 'Можно не писать.'))}
     ${who()}
-    <button class="btn btn-ink btn-wide">Отправить на проверку</button>
+    <button class="btn btn-ink btn-wide">${sendLabel()}</button>
   </form>`;
 }
 
@@ -98,7 +102,7 @@ export function masterForm() {
     ${more(group('За что цена?', opts('unit', plain(['за работу', 'за час', 'за метр', 'за м²', 'за рейс', 'за урок', 'за кг', 'за штуку']), false, ''))
       + field('Подробнее', '<input name="note" maxlength="60" placeholder="Например: выезд в тот же день">', 'Можно не писать.'))}
     ${who()}
-    <button class="btn btn-ink btn-wide">Отправить на проверку</button>
+    <button class="btn btn-ink btn-wide">${sendLabel()}</button>
   </form>`;
 }
 
@@ -117,7 +121,7 @@ export function goodsForm(deal) {
     ${more(group('За что цена?', opts('unit', plain(GOODS_UNITS), false, ''))
       + field('Подробнее', '<input name="note" maxlength="100" placeholder="Например: привезу по селу">', 'Можно не писать.'))}
     ${who()}
-    <button class="btn btn-ink btn-wide">Отправить на проверку</button>
+    <button class="btn btn-ink btn-wide">${sendLabel()}</button>
   </form>`;
 }
 
@@ -132,11 +136,20 @@ export function newsForm() {
     ${group('Фото', shotsField('news') + '<small>Можно не добавлять. До 3 фото.</small>')}
     ${who()}
     <p class="warn">${phoneIcon}<span><b>Ваш номер и имя увидят все.</b> Админ может написать вам, чтобы проверить, что объявление ваше.</span></p>
-    <button class="btn btn-ink btn-wide">Отправить на проверку</button>
+    <button class="btn btn-ink btn-wide">${sendLabel()}</button>
   </form>`;
 }
 
 export function doneScreen() {
+  if (lastOwn) {
+    return `<div class="scr done">
+    <span class="done-mark">${icon('ok')}</span>
+    <h1>Объявление на доске</h1>
+    <p class="scr-lead">Вы вошли как админ: объявление выложено сразу, без проверки. Плитка синяя, с подписью «От админа». Продлить и снять его можно во вкладке «Мои».</p>
+    <a class="btn btn-ink btn-wide" href="#/">На доску</a>
+    <a class="btn btn-line btn-wide" href="#/moi">Мои объявления</a>
+  </div>`;
+  }
   return `<div class="scr done">
     <span class="done-mark">${icon('clock')}</span>
     <h1>Отправлено админу</h1>
@@ -212,7 +225,9 @@ export async function submit(form) {
       btn.textContent = 'Отправляем. Не закрывайте страницу';
       toast('Связь слабая. Объявление уйдёт, когда связь станет лучше.');
     });
-    push.ping('new', type, item.id);
+    // Объявление админа уже на доске: почтальон скажет всем о новом, как после проверки
+    lastOwn = item.status === 'ok';
+    push.ping(lastOwn ? 'status' : 'new', type, item.id);
     // Уведомления уже разрешены, а свои человек не выключал: доска скажет, когда объявление проверят
     if (window.Notification?.permission === 'granted' && !chosen('notify')) { setPref('notify', true); push.sync(); }
     keepContact(data.name, data.phone, data.wa);
@@ -223,7 +238,7 @@ export async function submit(form) {
     if (e.message.startsWith('Одно объявление в сутки')) send({ 'Объявления': { 'Защита остановила': LABEL[type] } });
     toast(e.message);
     btn.disabled = false;
-    btn.textContent = 'Отправить на проверку';
+    btn.textContent = sendLabel();
   }
 }
 

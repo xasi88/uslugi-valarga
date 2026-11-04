@@ -54,3 +54,11 @@
 .a-kinds { display: flex; flex-wrap: wrap; gap: 8px; }
 .a-note { color: var(--ink-2); font-size: var(--fs-small); }
 .a-card.a-admin { border-left: 8px solid var(--cobalt); }
+
+/* «Панель на экране»: лимонная карточка установки (install.js). На доске вместо неё окно при первом входе */
+.install { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px 16px; margin-top: 32px; padding: 16px; border: var(--edge); border-radius: var(--r-card); background: var(--lemon-soft); color: var(--ink); box-shadow: var(--drop); }
+.install b { display: block; font-size: 17px; font-weight: 800; }
+.install span { display: block; margin-top: 2px; color: var(--ink-2); font-size: var(--fs-small); }
+.ask-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.ask-btns > .btn { flex: 1 1 auto; padding: 0 14px; }
+@media (max-width: 420px) { .install { grid-template-columns: 1fr; } }

@@ -14,7 +14,8 @@ import * as settings from './settings.js';
 import * as sound from './sound.js';
 import * as push from './push.js';
 import * as sharing from './share.js';
-import './install.js';
+import * as install from './install.js';
+import { guideScreen } from './guide.js';
 import './ask.js';
 
 // Адрес → экран и пункт меню
@@ -29,6 +30,7 @@ const ROUTES = {
   '#/gotovo': ['post', 1, post.doneScreen],
   '#/moi': ['mine', 2, mineScreen],
   '#/nastroyki': ['settings', -1, settings.settingsScreen],
+  '#/ustanovka': ['guide', -1, guideScreen],
 };
 // Страница плитки: мастер (#/m/<номер>), товар (#/t/<номер>) или работа (#/r/<номер>, с 2026-11-04) и собрание в базе
 const PAGES = { m: ['master', 'masters'], t: ['good', 'goods'], r: ['work', 'requests'], n: ['news', 'news'] };
@@ -52,7 +54,7 @@ function route() {
   if (page && prev === 'board') boardY = scrollY;
   // «Назад» возвращает на доску, только если человек пришёл с неё. Иначе ссылка из WhatsApp вела бы прочь с сайта
   if (page) canBack = booted && prev === 'board';
-  if (view === 'settings') canBack = booted;
+  if (view === 'settings' || view === 'guide') canBack = booted;
   booted = true;
   // Firebase нужен для отправки, «Моих» и настроек: он грузится при входе на эти экраны, витрине не нужен
   if (['post', 'mine', 'settings'].includes(view)) store.wake().catch(() => {});
@@ -73,6 +75,9 @@ function route() {
     scrollTo({ top: 0, behavior: 'auto' });
   }
 }
+
+// Браузер дал окно установки или доску поставили: кнопка «Установить» появляется или пропадает
+install.onInstall(() => { if (['guide', 'settings'].includes(document.body.dataset.view)) post.showScreen(current()); });
 
 // Данные поменялись (новое объявление, админ выложил): перерисовать открытый экран
 store.onChange(() => {
@@ -124,6 +129,12 @@ document.addEventListener('click', e => {
   if (a === 'notify-mine') settings.askMine(act);
   if (a === 'share') sharing.share(act);
   if (a === 'update') settings.checkUpdate(act);
+  // «Установить» в «Настройках» и на экране «Как установить»: окно установки браузера
+  if (a === 'install') install.promptInstall('Кнопка «Установить»').then(ok => ok && toast('Готово: значок «Валарг» на экране.', 5000));
+  if (a === 'copy-link') {
+    navigator.clipboard?.writeText('https://valarg.ru/').then(() => toast('Адрес скопирован. Вставьте его в адресную строку браузера.', 5000),
+      () => toast('Адрес доски: valarg.ru', 7000)) ?? toast('Адрес доски: valarg.ru', 7000);
+  }
   if (a === 'renew') {
     act.disabled = true;
     store.renew(type, id).then(() => toast('Готово: объявление снова на доске, наверху ленты.'),

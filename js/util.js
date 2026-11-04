@@ -150,6 +150,27 @@ export function fromRest(fields = {}) {
 // Снова через 3 дня, всего не больше 3 раз: дальше вопрос не мешает, включить можно в настройках
 export const askDue = (s = {}, now = Date.now()) => (s.n || 0) < 3 && now - (s.at || 0) >= 3 * 864e5;
 
+// Где открыта доска: система и браузер. Экран «Как установить» показывает их шаги первыми (guide.js).
+// ua: строка браузера, touch: точки касания (iPad называет себя компьютером Mac).
+// Edge, Яндекс, Samsung и Opera тоже пишут Chrome: их ищем раньше. inapp: окно WhatsApp, Telegram, Instagram
+export function browserOf(ua = '', touch = 0) {
+  const has = re => re.test(ua);
+  const ios = has(/iphone|ipad|ipod/i) || (has(/macintosh/i) && touch > 1);
+  if (has(/instagram|fban|fbav|fb_iab|vkclient|telegram|whatsapp|line\//i) || (has(/android/i) && has(/; wv\)/))) return 'inapp';
+  if (ios) return !has(/safari\//i) ? 'inapp' : has(/crios|fxios|edgios|yabrowser|opt\/|gsa\//i) ? 'ios-other' : 'ios-safari';
+  if (has(/android/i)) {
+    return has(/samsungbrowser/i) ? 'android-samsung' : has(/yabrowser|yasearchbrowser/i) ? 'android-yandex'
+      : has(/edga\//i) ? 'android-edge' : has(/opr\/|opx\//i) ? 'android-opera' : has(/firefox/i) ? 'android-firefox'
+        : has(/miuibrowser|huaweibrowser|heytap|vivobrowser|ucbrowser/i) ? 'android-other' : has(/chrome/i) ? 'android-chrome' : 'android-other';
+  }
+  if (has(/edg\//i)) return 'pc-edge';
+  if (has(/yabrowser/i)) return 'pc-yandex';
+  if (has(/opr\//i)) return 'pc-other';
+  if (has(/firefox/i)) return 'pc-firefox';
+  if (has(/chrome|chromium/i)) return 'pc-chrome';
+  return has(/macintosh/i) && has(/safari\//i) ? 'mac-safari' : 'pc-other';
+}
+
 // Срок на доске (решение автора 2026-11-04): услуги 90 дней, работа и товары 30, объявления села 1 день.
 // Те же числа в правилах базы и у почтальона (worker). Потом почтальон снимает объявление (статус old),
 // владелец продлевает его в «Моих»: не раньше чем за RENEW дней до конца срока, объявление села только

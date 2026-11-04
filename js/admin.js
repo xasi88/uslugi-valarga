@@ -36,7 +36,7 @@ function askOwner(x) {
 function acts(x) {
   if (x.status === 'wait') return `<button class="btn a-ok" data-a="ok">${icon('ok')}Выложить</button><button class="btn btn-danger" data-a="no">Отклонить</button>${x.type === 'news' ? askOwner(x) : ''}`;
   // Своё объявление админ продлевает сам, как житель в «Моих»
-  if (x.admin && canRenew(x, x.type)) return `<button class="btn a-ok" data-a="renew">Продлить на сутки</button>${DEL}`;
+  if (x.admin && canRenew(x, x.type)) return `<button class="btn a-ok" data-a="renew">${x.type === 'news' ? 'Продлить на сутки' : 'Продлить'}</button>${DEL}`;
   if (x.status === 'ok') return `<button class="btn btn-danger" data-a="off">Снять с доски</button>${DEL}`;
   return (BACK[x.status] ? `<button class="btn a-ok" data-a="ok">${icon('ok')}${BACK[x.status]}</button>` : '') + DEL;
 }

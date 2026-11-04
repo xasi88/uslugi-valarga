@@ -108,6 +108,17 @@
 .vrow > ul { margin: 0 0 12px; }
 .set-foot { color: var(--mint); font-size: var(--fs-small); text-align: center; }
 
+/* Экран «Как установить» (guide.js, 2026-11-04): шаги списком, номер в лимонном круге. Другие браузеры свёрнуты */
+.steps { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; counter-reset: s; }
+.steps li { position: relative; min-height: 32px; padding-left: 44px; color: var(--ink); overflow-wrap: anywhere; hyphens: auto; counter-increment: s; }
+.steps li::before { content: counter(s); position: absolute; left: 0; top: -3px; width: 32px; height: 32px; display: grid; place-items: center; border: var(--edge-thin); border-radius: 50%; background: var(--lemon); font-weight: 800; font-size: 15px; }
+.g-now { background: var(--lemon-soft); }
+.g-head { margin-top: 6px; color: var(--paper); font-size: var(--fs-h2); font-weight: 800; }
+.guide .vrow > summary span { color: var(--ink); font-weight: 800; }
+.vrow > .steps { margin-bottom: 12px; }
+.vrow > .set-note { margin: -2px 0 12px; }
+.vrow > .btn { margin-bottom: 14px; }
+
 /* «Мои»: наклейка с фото слева, статус и кнопки */
 .mine { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }
 .mine-item { display: grid; grid-template-columns: 72px 1fr; gap: 6px 14px; padding: 14px; border: var(--edge); border-radius: var(--r-card); background: var(--paper); color: var(--ink); box-shadow: var(--drop); }
