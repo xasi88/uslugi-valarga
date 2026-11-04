@@ -3,7 +3,7 @@
 // версию, без сети берётся копия. Объявления не копируются: их держит база Firebase.
 // Хранилище копий общее у всех сайтов адреса: служба удаляет только свои копии (имя с PREFIX).
 const PREFIX = 'uslugi-valarga-';
-const CACHE = PREFIX + 'v12';
+const CACHE = PREFIX + 'v13';
 const SHELL = [
   '/', '/admin/', '/manifest.webmanifest', '/admin/manifest.webmanifest',
   '/css/base.css', '/css/site.css', '/css/forms.css', '/css/admin.css',
@@ -24,8 +24,17 @@ self.addEventListener('activate', e => {
 });
 
 // Слабая связь (решение автора 2026-11-04): сеть отвечает дольше 3 секунд, и человек получает копию из памяти.
-// Свежий файл докачивается в фоне и ляжет в копию к следующему открытию. Копии нет: ждём сеть до конца
+// Свежий файл докачивается в фоне и ляжет в копию к следующему открытию. Копии нет: ждём сеть до конца.
+// Одна загрузка: одна версия (2026-11-04). Раньше каждый файл сам решал «сеть или копия», и после выкладки
+// новый admin.js встретил старый icons.js: панель не открылась. Теперь решает страница: пришла из сети,
+// и её файлы ждут сеть до конца; взята из копии, и её файлы тоже из копии. Служба не помнит страницу: сеть
 const WAIT = 3000;
+const modes = new Map();
+function remember(id, mode) {
+  if (!id) return;
+  modes.set(id, mode);
+  if (modes.size > 50) modes.delete(modes.keys().next().value);
+}
 self.addEventListener('fetch', e => {
   const req = e.request;
   const url = new URL(req.url);
@@ -47,12 +56,20 @@ self.addEventListener('fetch', e => {
     .then(hit => hit || caches.match(req, { ignoreSearch: true }))
     .then(hit => hit || (req.mode === 'navigate' ? caches.match(url.pathname.startsWith('/admin') ? '/admin/' : '/') : undefined));
   e.respondWith((async () => {
-    const slow = new Promise(r => setTimeout(r, WAIT, 'slow'));
-    const first = await Promise.race([net.catch(() => 'fail'), slow]);
-    if (first !== 'slow' && first !== 'fail') return first;
-    const hit = await copy();
-    if (hit) return hit;
-    return net.catch(() => Response.error());
+    if (req.mode === 'navigate') {
+      const slow = new Promise(r => setTimeout(r, WAIT, 'slow'));
+      const first = await Promise.race([net.catch(() => 'fail'), slow]);
+      if (first !== 'slow' && first !== 'fail') { remember(e.resultingClientId, 'net'); return first; }
+      const hit = await copy();
+      remember(e.resultingClientId, hit ? 'copy' : 'net');
+      return hit || net.catch(() => Response.error());
+    }
+    // Файл страницы: страница из копии, и файл из копии. Иначе ждём сеть, без сети копия
+    if (modes.get(e.clientId) === 'copy') {
+      const hit = await copy();
+      if (hit) return hit;
+    }
+    try { return await net; } catch { return (await copy()) || Response.error(); }
   })());
 });
 
