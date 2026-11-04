@@ -96,8 +96,16 @@
 .vers ul { margin-top: 6px; padding-left: 20px; color: var(--ink-2); }
 .vers li + li { margin-top: 4px; }
 .vers b { color: var(--ink); }
-.vers summary { display: flex; align-items: center; min-height: 44px; font-weight: 800; cursor: pointer; }
-.vers details[open] { display: grid; gap: 12px; }
+/* Последняя версия открыта, метка лимоном. Прошлые: строка под палец, стрелка вниз, раскрытая стрелка вверх */
+.ver-tag { display: inline-block; margin-left: 4px; padding: 1px 8px; border-radius: var(--r-pill); background: var(--lemon); color: var(--ink); font-size: 12px; font-weight: 800; vertical-align: 1px; }
+.vers .btn + h3 { padding-top: 12px; border-top: var(--edge-thin); }
+.ver-old { display: grid; margin-top: -6px; }
+.vrow + .vrow { border-top: var(--edge-thin); }
+.vrow > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; color: var(--ink-2); list-style: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.vrow > summary::-webkit-details-marker { display: none; }
+.vrow > summary svg { flex: none; width: 22px; height: 22px; color: var(--ink); transition: transform .2s; }
+.vrow[open] > summary svg { transform: rotate(180deg); }
+.vrow > ul { margin: 0 0 12px; }
 .set-foot { color: var(--mint); font-size: var(--fs-small); text-align: center; }
 
 /* «Мои»: наклейка с фото слева, статус и кнопки */

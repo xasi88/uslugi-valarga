@@ -3,7 +3,7 @@
 // версию, без сети берётся копия. Объявления не копируются: их держит база Firebase.
 // Хранилище копий общее у всех сайтов адреса: служба удаляет только свои копии (имя с PREFIX).
 const PREFIX = 'uslugi-valarga-';
-const CACHE = PREFIX + 'v10';
+const CACHE = PREFIX + 'v11';
 const SHELL = [
   '/', '/admin/', '/manifest.webmanifest', '/admin/manifest.webmanifest',
   '/css/base.css', '/css/site.css', '/css/forms.css', '/css/admin.css',
@@ -30,6 +30,8 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   const url = new URL(req.url);
   if (req.method !== 'GET' || url.origin !== location.origin) return;
+  // «Проверить обновление» (settings.js): запрос с ?check идёт прямо на сайт, копия не годится
+  if (url.searchParams.has('check')) return;
   // no-cache: браузер сверяет файл с сервером, и после выкладки новые файлы не смешиваются со старыми
   // (2026-10-29: в NAFI новый скрипт встретил старый из памяти браузера, и каталог не загрузился)
   const net = fetch(req, { cache: 'no-cache' }).then(res => {

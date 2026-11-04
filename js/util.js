@@ -81,6 +81,12 @@ export function shareText(type, x, site = 'https://valarg.ru/') {
   return [`${what}, ${fullPrice(type, x)}`, about, `Смотрите на доске села «Валарг»: ${site}${SHARE_PAGE[type]}${x.id}`].filter(Boolean).join('\n');
 }
 
+// Версия a новее b («Проверить обновление», «Что нового»): «2.10» новее «2.9», «3.0» новее «2.9»
+export function newer(a, b) {
+  const [x, y] = [a, b].map(v => String(v).split('.').map(Number));
+  return x[0] > y[0] || (x[0] === y[0] && x[1] > y[1]);
+}
+
 // Адрес фото шириной до w точек: фото целиком, без обрезки, меньше оригинала не растягивается.
 // Фото из пробных данных (data:) отдаётся как есть
 const own = id => !/^(data:|https?:)/.test(id);

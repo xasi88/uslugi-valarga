@@ -1,10 +1,10 @@
-// Экран «Настройки» (#/nastroyki, шестерёнка в шапке): звук, уведомления, админ, «Что нового».
+// Экран «Настройки» (#/nastroyki, шестерёнка в шапке): звук, уведомления, админ, «Что нового» и проверка обновления.
 // Уведомления двух видов: новые объявления на доске (fresh, с 2026-11-04) и свои объявления (notify).
 // Свои: доска открыта или свёрнута: подсказка, звук, уведомление телефона (tell).
 // Доска закрыта: уведомление шлёт почтальон в Cloudflare (push.js, worker). Объявление, которое
 // поменялось, пока доска была закрыта, доска ещё раз показывает подсказкой при следующем открытии
 import { icon } from './icons.js';
-import { esc } from './util.js';
+import { esc, newer } from './util.js';
 import { toast } from './ui.js';
 import { prefs, setPref } from './prefs.js';
 import * as sound from './sound.js';
@@ -17,7 +17,12 @@ const day = d => { const t = new Date(d + 'T12:00'); return `${t.toLocaleDateStr
 const pair = (name, on, yes, no) => `<div class="set-pick">
     <button class="chip" type="button" data-pref="${name}" data-on="1" aria-pressed="${on}">${yes}</button>
     <button class="chip" type="button" data-pref="${name}" data-on="0" aria-pressed="${!on}">${no}</button></div>`;
-const ver = x => `<div><p><b>Версия ${x.v}</b> · ${day(x.date)}</p><ul>${x.items.map(i => `<li>${esc(i)}</li>`).join('')}</ul></div>`;
+// «Что нового» (решение автора 2026-11-04): последняя версия открыта всегда, под ней «Проверить обновление».
+// Прошлые свёрнуты, касание раскрывает. Экран рисуется заново при каждом входе: вышел и вернулся, всё снова свёрнуто
+const when = x => `<b>Версия ${x.v}</b> · ${day(x.date)}`;
+const list = x => `<ul>${x.items.map(i => `<li>${esc(i)}</li>`).join('')}</ul>`;
+const now = x => `<div class="ver-now"><p>${when(x)} <span class="ver-tag">Новое</span></p>${list(x)}</div>`;
+const old = x => `<details class="vrow"><summary><span>${when(x)}</span>${icon('down')}</summary>${list(x)}</details>`;
 
 function adminBox(n) {
   if (n === null) {
@@ -43,11 +48,29 @@ export function settingsScreen() {
       <p class="set-note">Приходят и когда доска закрыта. На iPhone: если доска поставлена на экран.</p></section>
     <section class="set" id="set-admin"><h2>${icon('ok')}Админ</h2>${adminBox(n)}</section>
     <section class="set vers"><h2>${icon('clock')}Что нового</h2>
-      ${VERSIONS.slice(0, 3).map(ver).join('')}
-      <details><summary>Прошлые версии</summary>${VERSIONS.slice(3).map(ver).join('')}</details></section>
+      ${now(VERSIONS[0])}
+      <button class="btn btn-line" type="button" data-act="update">Проверить обновление</button>
+      <h3>Прошлые версии</h3>
+      <div class="ver-old">${VERSIONS.slice(1).map(old).join('')}</div></section>
     <p class="set-foot">Валарг, версия ${VERSIONS[0].v}</p>
     ${adminLine('Вопрос по доске? Написать админу')}
   </div>`;
+}
+
+// «Проверить обновление»: свежий список версий прямо с сайта. Запрос с ?check служба (sw.js) не берёт из копии.
+// Есть новее: служба обновляется, доска перезагружается и берёт новые файлы с сайта
+export async function checkUpdate(btn) {
+  const have = VERSIONS[0].v;
+  btn.disabled = true;
+  let v;
+  try { v = (await import(`./versions.js?check=${Date.now()}`)).VERSIONS[0].v; } catch {
+    btn.disabled = false;
+    return toast('Нет связи. Проверьте интернет и попробуйте ещё раз.');
+  }
+  if (!newer(v, have)) { btn.disabled = false; return toast(`У вас последняя версия ${have}.`); }
+  toast(`Есть версия ${v}. Обновляем доску.`);
+  await navigator.serviceWorker?.getRegistration().then(r => r?.update()).catch(() => {});
+  location.reload();
 }
 
 // Число на проверке поменялось, пока открыты настройки

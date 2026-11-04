@@ -122,6 +122,7 @@ document.addEventListener('click', e => {
   }
   if (a === 'notify-mine') settings.askMine(act);
   if (a === 'share') sharing.share(act);
+  if (a === 'update') settings.checkUpdate(act);
   if (a === 'renew') {
     act.disabled = true;
     store.renew(type, id).then(() => toast('Готово: объявление снова на доске, наверху ленты.'),
