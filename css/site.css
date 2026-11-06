@@ -45,6 +45,8 @@ body { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 .page-head { padding-top: 8px; }
 .page-head h1 { max-width: 12em; }
 .page-head p { margin-top: 10px; max-width: 40ch; color: var(--mint); font-size: var(--fs-lead); }
+/* Жизнь доски (2026-11-06): тихая подпись, не ряд цифр */
+.page-head .pulse { margin-top: 6px; font-size: var(--fs-small); font-weight: 700; white-space: pre-line; }
 .search { position: relative; display: block; max-width: 560px; margin-top: 18px; }
 .search input {
   width: 100%; min-height: 54px; padding: 0 16px 0 48px;

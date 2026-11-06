@@ -16,6 +16,7 @@ import * as push from './push.js';
 import * as sharing from './share.js';
 import * as install from './install.js';
 import { guideScreen } from './guide.js';
+import { hit } from './pulse.js';
 import './ask.js';
 
 // Адрес → экран и пункт меню
@@ -189,3 +190,5 @@ renderTab();
 route();
 // Уведомления включены: обновить подписку и адрес телефона, когда доска уже на экране
 push.start();
+// Счёт людей за неделю: «я зашёл» почтальону, не чаще раза в 7 дней (pulse.js)
+hit();

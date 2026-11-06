@@ -28,8 +28,12 @@ const SAVED = 'uv-board';
 let ready = false;
 // Объявления доски уже есть (из памяти или из базы). Пока нет: экраны пишут «Загружаем», а не «Пока пусто»
 export const loaded = () => ready;
+// Людей за неделю из тетради доски (js/pulse.js)
+let week = 0;
+export const seen = () => week;
 function put(lists) {
   TYPES.forEach(t => { parts[t].board = new Map((lists[t] || []).map(x => [x.id, x])); });
+  week = lists.week || 0;
   ready = true;
 }
 function keep() {

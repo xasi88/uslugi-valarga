@@ -198,8 +198,26 @@ export function fromBook(data, now = Date.now()) {
     if (!out[type]) continue;
     try { out[type].push({ ...JSON.parse(json), id: key.slice(i + 1) }); } catch { /* битая строка: без неё */ }
   }
+  // Сколько людей заходило за неделю (с 2026-11-06, считает почтальон). Нет числа: 0, доска о людях молчит
+  out.week = Number(data.week) || 0;
   return out;
 }
+
+// Жизнь доски (решение автора 2026-11-06): тихая строка под заголовком, что доска живая. Не ряд цифр (брендбук).
+// n: объявлений на доске, newest: время самого нового, week: людей за неделю. Людей меньше WEEK_MIN:
+// о них молчим, маленькое число делает доску пустой
+export const WEEK_MIN = 20;
+export function pulseText(n, newest, week, now = Date.now()) {
+  const out = [];
+  if (n) out.push(`На доске ${n} ${plural(n, 'объявление', 'объявления', 'объявлений')}, новое ${ago(newest, now)}.`);
+  if (week >= WEEK_MIN) out.push(`За неделю ${plural(week, 'заходил', 'заходили', 'заходили')} ${week} ${plural(week, 'человек', 'человека', 'человек')}.`);
+  // Каждое предложение своей строкой (.pulse: white-space: pre-line)
+  return out.join('\n');
+}
+// День по Москве числом. Доска говорит почтальону «я зашёл» не чаще раза в 7 таких дней:
+// так один человек за неделю считается один раз (js/pulse.js)
+export const mskDay = (t = Date.now()) => Math.floor((t + 3 * 3600e3) / 864e5);
+export const hitDue = (last, now = Date.now()) => !(mskDay(now) - Number(last) < 7);
 
 // Вопрос «Сообщать о новых объявлениях?» (ask.js). s: { n: сколько раз ответили «Не сейчас», at: когда }.
 // Снова через 3 дня, всего не больше 3 раз: дальше вопрос не мешает, включить можно в настройках

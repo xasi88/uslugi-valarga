@@ -10,6 +10,7 @@ import { $, photo, SIZES, watch } from './ui.js';
 import * as store from './store.js';
 import { prepare } from './share.js';
 import * as filter from './filter.js';
+import * as pulse from './pulse.js';
 
 export const state = { q: '' };
 const TYPES = ['masters', 'requests', 'goods', 'news'];
@@ -106,6 +107,8 @@ export function renderList() {
   if (!end.isConnected) root.after(end);
   const all = items();
   filter.draw(all);
+  // Строка «На доске 48 объявлений, новое 2 часа назад…» по всем объявлениям, без фильтра и поиска
+  pulse.draw(all);
   const list = all.filter(match);
   const days = {};
   list.forEach(x => { const d = dayName(x.at); days[d] = (days[d] || 0) + 1; });
